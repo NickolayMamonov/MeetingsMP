@@ -33,3 +33,7 @@ plugins {
 }
 
 include(":composeApp")
+include(":meetings-android")
+include(":meetings-desktop")
+include(":meetings-shared")
+include(":core:uikit")
