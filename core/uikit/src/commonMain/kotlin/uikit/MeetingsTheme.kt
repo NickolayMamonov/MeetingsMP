@@ -20,7 +20,7 @@ fun MeetingsTheme(
         LocalShapes provides shapes,
     ) {
         MaterialTheme(
-            colorScheme = colors.toM3ColorScheme(),
+            colorScheme = colors.toM3ColorScheme(isDark = isDarkTheme),
             typography = typography,
             shapes = shapes.toM3Shapes(),
             content = content

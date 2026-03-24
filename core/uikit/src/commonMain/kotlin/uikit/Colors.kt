@@ -4,6 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ColorScheme as M3ColorScheme
+import androidx.compose.material3.lightColorScheme as m3LightColorScheme
+import androidx.compose.material3.darkColorScheme as m3DarkColorScheme
 
 internal val LocalColorScheme = staticCompositionLocalOf { lightColorScheme() }
 
@@ -143,41 +145,44 @@ data class ColorScheme(
     val tagContent: Color,
 )
 
-internal fun ColorScheme.toM3ColorScheme(): M3ColorScheme = M3ColorScheme(
-    primary = primary,
-    onPrimary = onPrimary,
-    primaryContainer = primaryContainer,
-    onPrimaryContainer = onPrimaryContainer,
-    inversePrimary = inversePrimary,
-    secondary = secondary,
-    onSecondary = onSecondary,
-    secondaryContainer = secondaryContainer,
-    onSecondaryContainer = onSecondaryContainer,
-    tertiary = tertiary,
-    onTertiary = onTertiary,
-    tertiaryContainer = tertiaryContainer,
-    onTertiaryContainer = onTertiaryContainer,
-    error = error,
-    onError = onError,
-    errorContainer = errorContainer,
-    onErrorContainer = onErrorContainer,
-    background = background,
-    onBackground = onBackground,
-    surface = surface,
-    onSurface = onSurface,
-    surfaceVariant = surfaceVariant,
-    onSurfaceVariant = onSurfaceVariant,
-    surfaceTint = surfaceTint,
-    inverseSurface = inverseSurface,
-    inverseOnSurface = inverseOnSurface,
-    surfaceBright = surfaceBright,
-    surfaceDim = surfaceDim,
-    surfaceContainer = surfaceContainer,
-    surfaceContainerHigh = surfaceContainerHigh,
-    surfaceContainerHighest = surfaceContainerHighest,
-    surfaceContainerLow = surfaceContainerLow,
-    surfaceContainerLowest = surfaceContainerLowest,
-    outline = outline,
-    outlineVariant = outlineVariant,
-    scrim = scrim,
-)
+internal fun ColorScheme.toM3ColorScheme(isDark: Boolean = false): M3ColorScheme {
+    val base = if (isDark) m3DarkColorScheme() else m3LightColorScheme()
+    return base.copy(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        inversePrimary = inversePrimary,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onSecondaryContainer,
+        tertiary = tertiary,
+        onTertiary = onTertiary,
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = onTertiaryContainer,
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        onErrorContainer = onErrorContainer,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        surfaceTint = surfaceTint,
+        inverseSurface = inverseSurface,
+        inverseOnSurface = inverseOnSurface,
+        outline = outline,
+        outlineVariant = outlineVariant,
+        scrim = scrim,
+        surfaceBright = surfaceBright,
+        surfaceDim = surfaceDim,
+        surfaceContainer = surfaceContainer,
+        surfaceContainerHigh = surfaceContainerHigh,
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceContainerLow = surfaceContainerLow,
+        surfaceContainerLowest = surfaceContainerLowest,
+    )
+}
