@@ -28,24 +28,11 @@ kotlin {
     jvm()
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.ui.tooling.preview)
-        }
         commonMain.dependencies {
             api(libs.compose.runtime)
             api(libs.compose.foundation)
             api(libs.compose.material3)
             api(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.ui.tooling.preview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
-        jvmMain.dependencies {
-            implementation(libs.kotlinx.coroutines.swing)
         }
     }
 }
@@ -62,8 +49,4 @@ android{
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-}
-
-dependencies {
-    debugImplementation(libs.compose.uiTooling)
 }

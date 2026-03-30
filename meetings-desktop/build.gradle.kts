@@ -17,7 +17,7 @@ kotlin {
 
     sourceSets {
         val desktopMain  by getting
-        desktopMain .dependencies {
+        desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(projects.composeApp)
         }
