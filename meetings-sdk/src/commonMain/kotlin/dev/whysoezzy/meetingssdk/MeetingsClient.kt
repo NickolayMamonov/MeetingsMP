@@ -21,6 +21,7 @@ import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
@@ -114,6 +115,7 @@ private fun defaultHttpClient(
         if(enableLogging){
             install(Logging){
                 level = LogLevel.BODY
+                sanitizeHeader { header -> header == HttpHeaders.Authorization }
             }
         }
     }
