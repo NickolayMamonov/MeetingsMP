@@ -6,6 +6,9 @@ plugins {
     alias(libs.plugins.jetbrains.compose.multiplatform)
     alias(libs.plugins.jetbrains.compose.compiler)
     alias(libs.plugins.jetbrains.compose.hot.reload)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
+    alias(libs.plugins.google.ksp)
+    alias(libs.plugins.ktorfit)
 }
 
 kotlin {
@@ -21,7 +24,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "ComposeApp"
+            baseName = "MeetingsSdk"
             isStatic = true
         }
     }
@@ -30,16 +33,33 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.compose.runtime)
-            api(libs.compose.foundation)
-            api(libs.compose.material3)
-            api(libs.compose.ui)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.contentNegotiation)
+            implementation(libs.ktor.client.auth)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.ktorfit)
+        }
+
+        androidMain.dependencies {
+            implementation(libs.ktor.client.engine.okhttp)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.engine.okhttp)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.ktor.client.engine.darwin)
         }
     }
 }
 
 android{
-    namespace= "dev.whysoezzy.meetings.compose"
+    namespace= "dev.whysoezzy.meetingssdk"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig{
