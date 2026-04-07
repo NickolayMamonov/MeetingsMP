@@ -15,7 +15,6 @@ import dev.whysoezzy.meetingssdk.models.RequestCodeBody
 import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
 import dev.whysoezzy.meetingssdk.models.VerifyCodeBody
 import io.ktor.client.HttpClient
-import io.ktor.client.HttpClientConfig
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer

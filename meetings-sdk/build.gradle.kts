@@ -24,7 +24,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "ComposeApp"
+            baseName = "MeetingsSdk"
             isStatic = true
         }
     }
@@ -44,6 +44,10 @@ kotlin {
             implementation(libs.ktorfit)
         }
 
+        androidMain.dependencies {
+            implementation(libs.ktor.client.engine.okhttp)
+        }
+
         jvmMain.dependencies {
             implementation(libs.ktor.client.engine.okhttp)
         }
@@ -55,7 +59,7 @@ kotlin {
 }
 
 android{
-    namespace= "dev.whysoezzy.meetings.compose"
+    namespace= "dev.whysoezzy.meetingssdk"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig{

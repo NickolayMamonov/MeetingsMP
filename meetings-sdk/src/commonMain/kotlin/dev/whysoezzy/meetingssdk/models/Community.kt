@@ -11,6 +11,7 @@ data class CommunityShort(
     @SerialName("subscribersCount") val subscribersCount: Int
 )
 
+@Serializable
 data class CommunityFull(
     val id: String,
     val name: String,

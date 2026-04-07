@@ -1,5 +1,6 @@
 package dev.whysoezzy.meetingssdk.api
 
+import de.jensklingenberg.ktorfit.http.DELETE
 import de.jensklingenberg.ktorfit.http.GET
 import de.jensklingenberg.ktorfit.http.POST
 import de.jensklingenberg.ktorfit.http.Path
@@ -19,5 +20,6 @@ interface CommunitiesApi{
     @POST("communities/{id}/subscriptions")
     suspend fun subscribe(@Path("id") communityId: String) : SubscriptionCount
 
+    @DELETE("communities/{id}/subscriptions")
     suspend fun unsubscribe(@Path("id") communityId: String)
 }

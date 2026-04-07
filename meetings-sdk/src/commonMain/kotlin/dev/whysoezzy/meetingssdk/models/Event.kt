@@ -29,7 +29,7 @@ data class EventFull(
     val address: String? = null,
     @SerialName("venueName") val venueName: String? = null,
     @SerialName("metroStation") val metroStation: String? = null,
-    val capacity: Int? =null,
+    val capacity: Int? = null,
     @SerialName("attendeesCount") val attendeesCount: Int,
     val status: EventStatus,
     val tags: List<Interest> = emptyList(),

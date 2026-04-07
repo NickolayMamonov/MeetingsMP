@@ -33,8 +33,3 @@ data class SocialLink(
     val platform: String,
     val username: String
 )
-
-@Serializable
-data class AvatarUrl(
-    @SerialName("avatarUrl") val url: String
-)
