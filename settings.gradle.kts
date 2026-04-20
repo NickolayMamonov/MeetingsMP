@@ -2,6 +2,7 @@ rootProject.name = "Meetings"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
+    includeBuild("gradle/convetions-plugins")
     repositories {
         google {
             mavenContent {

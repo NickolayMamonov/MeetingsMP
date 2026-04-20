@@ -2,11 +2,9 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.jetbrains.kotlin.multiplatform)
-    alias(libs.plugins.jetbrains.compose.compiler)
-    alias(libs.plugins.jetbrains.compose.multiplatform)
+    id("kmp.library.desktop")
+    id("jetbrains-compose.desktop")
 }
-
 
 kotlin {
     jvm("desktop") {
@@ -16,13 +14,11 @@ kotlin {
     }
 
     sourceSets {
-        val desktopMain  by getting
+        val desktopMain by getting
         desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
             implementation(projects.composeApp)
         }
     }
-
 }
 
 compose.desktop {
