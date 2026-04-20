@@ -1,0 +1,25 @@
+import dev.whysoezzy.meetings.gradle.kmplibbase.androidConfig
+import dev.whysoezzy.meetings.gradle.kmplibbase.applyIfNeeded
+import dev.whysoezzy.meetings.gradle.kmplibbase.composeExt
+import dev.whysoezzy.meetings.gradle.kmplibbase.kmpConfig
+
+plugins.applyIfNeeded("jetbrains-compose.base")
+plugins.apply("jetpack-compose.base")
+
+kmpConfig {
+    sourceSets {
+        androidMain.dependencies {
+            implementation(composeExt.dependencies.preview)
+        }
+    }
+}
+
+androidConfig {
+    buildFeatures {
+        compose = true
+    }
+}
+
+dependencies {
+    "debugImplementation"(composeExt.dependencies.uiTooling)
+}
