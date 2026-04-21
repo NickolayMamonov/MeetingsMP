@@ -10,5 +10,8 @@ internal val requestedAndroidAbisParam = ProjectConfigParam(
 
 val Project.requestedAndroidAbis: List<String>?
     get() {
-        return readConfigParam(requestedAndroidAbisParam)?.split(",")
+        return readConfigParam(requestedAndroidAbisParam)
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
     }
