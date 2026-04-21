@@ -17,7 +17,16 @@ enum class IOSPlatform(val value: String) {
 
 val Project.kmpIosPlatforms: List<IOSPlatform>
     get() {
-        return readConfigParam(supportedIOSTargetsParam)?.split(",")?.map { paramValue ->
-            IOSPlatform.values().first { it.value == paramValue }
-        } ?: IOSPlatform.values().toList()
+        val allowedValues = IOSPlatform.values().map { it.value }
+        return readConfigParam(supportedIOSTargetsParam)
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.map { paramValue ->
+                IOSPlatform.values().firstOrNull { it.value == paramValue }
+                    ?: throw IllegalArgumentException(
+                        "Unsupported iOS platform '$paramValue' for '${supportedIOSTargetsParam.cmdParamName}'. " +
+                            "Allowed values: ${allowedValues.joinToString(", ")}"
+                    )
+            }
+            ?: IOSPlatform.values().toList()
     }
