@@ -4,7 +4,7 @@ import dev.whysoezzy.meetings.gradle.kmplibbase.composeExt
 import dev.whysoezzy.meetings.gradle.kmplibbase.kmpConfig
 
 plugins.applyIfNeeded("jetbrains-compose.base")
-plugins.apply("jetpack-compose.base")
+plugins.applyIfNeeded("jetpack-compose.base")
 
 kmpConfig {
     sourceSets {
