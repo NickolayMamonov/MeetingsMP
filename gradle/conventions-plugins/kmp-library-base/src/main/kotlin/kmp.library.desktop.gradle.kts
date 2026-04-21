@@ -10,7 +10,11 @@ plugins.applyIfNeeded(libs.plugins.jetbrains.kotlin.multiplatform.get().pluginId
 plugins.applyIfNeeded("kmp.library.base")
 
 kmpConfig {
-    jvm("desktop")
+    jvm("desktop") {
+        compilerOptions {
+            jvmTarget.set(libs.jvmTarget())
+        }
+    }
 
     sourceSets {
         val desktopMain by getting

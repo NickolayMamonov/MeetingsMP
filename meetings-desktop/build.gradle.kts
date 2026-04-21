@@ -1,6 +1,4 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmTarget
 
 plugins {
     id("kmp.library.desktop")
@@ -8,12 +6,6 @@ plugins {
 }
 
 kotlin {
-    targets.named<KotlinJvmTarget>("desktop") {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
-
     sourceSets {
         val desktopMain by getting
         desktopMain.dependencies {
