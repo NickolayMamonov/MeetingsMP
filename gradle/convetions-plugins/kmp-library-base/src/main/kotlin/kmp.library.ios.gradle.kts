@@ -10,6 +10,11 @@ import dev.whysoezzy.meetings.gradle.kmplibbase.libs
 plugins.applyIfNeeded(libs.plugins.jetbrains.kotlin.multiplatform.get().pluginId)
 plugins.applyIfNeeded("kmp.library.base")
 
+val iosFrameworkBaseNameOverride = providers
+    .gradleProperty("kmp.ios.framework.baseName")
+    .orNull
+val iosFrameworkBaseName = (iosFrameworkBaseNameOverride ?: project.name).toSwiftModuleName()
+
 kmpConfig {
     kmpIosPlatforms.asSequence()
         .map {
@@ -20,8 +25,13 @@ kmpConfig {
             }
         }.forEach { iosTarget ->
             iosTarget.binaries.framework {
-                baseName = project.name
+                baseName = iosFrameworkBaseName
                 isStatic = true
             }
         }
 }
+
+private fun String.toSwiftModuleName(): String = this
+    .replace(Regex("[^A-Za-z0-9_]"), "_")
+    .replace(Regex("^[^A-Za-z_]"), "_")
+    .ifBlank { "MeetingsFramework" }
