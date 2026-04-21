@@ -14,12 +14,6 @@ kmpConfig {
     }
 }
 
-androidConfig {
-    buildFeatures {
-        compose = true
-    }
-}
-
 dependencies {
     "debugImplementation"(composeExt.dependencies.uiTooling)
 }
