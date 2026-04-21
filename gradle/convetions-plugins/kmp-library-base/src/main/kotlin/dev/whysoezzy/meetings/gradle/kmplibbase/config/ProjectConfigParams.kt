@@ -11,7 +11,7 @@ internal data class ProjectConfigParam(
 )
 
 internal fun Project.readConfigParam(param: ProjectConfigParam): String? = with(param) {
-    return rootProject.findProperty(cmdParamName) as String? // 1. Gradle property
+    return rootProject.findProperty(cmdParamName)?.toString() // 1. Gradle property
         ?: androidLocalPropertyParamName?.let(::readFromLocalProperties) // 2. From local.properties
         ?: envParamName?.let(System::getenv) // 3. Environment variable
         ?: defaultValue
