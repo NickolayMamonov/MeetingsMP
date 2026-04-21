@@ -1,33 +1,10 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.jetbrains.kotlin.multiplatform)
+    id("kmp.library.all")
+    id("jetpack-compose.base")
     alias(libs.plugins.jetbrains.compose.multiplatform)
-    alias(libs.plugins.jetbrains.compose.compiler)
-    alias(libs.plugins.jetbrains.compose.hot.reload)
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
-
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "ComposeApp"
-            isStatic = true
-        }
-    }
-
-    jvm()
-
     sourceSets {
         commonMain.dependencies {
             api(libs.compose.runtime)
@@ -38,16 +15,6 @@ kotlin {
     }
 }
 
-android{
-    namespace= "dev.whysoezzy.meetings.compose"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig{
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+android {
+    namespace = "dev.whysoezzy.meetings.compose"
 }

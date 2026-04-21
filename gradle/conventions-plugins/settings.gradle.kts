@@ -1,8 +1,6 @@
-rootProject.name = "Meetings"
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+@file:Suppress("UnstableApiUsage")
 
 pluginManagement {
-    includeBuild("gradle/conventions-plugins")
     repositories {
         google {
             mavenContent {
@@ -11,8 +9,8 @@ pluginManagement {
                 includeGroupAndSubgroups("com.google")
             }
         }
-        mavenCentral()
         gradlePluginPortal()
+        mavenCentral()
     }
 }
 
@@ -27,15 +25,11 @@ dependencyResolutionManagement {
         }
         mavenCentral()
     }
+    versionCatalogs {
+        create("libs") {
+            from(files("../libs.versions.toml"))
+        }
+    }
 }
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
-
-include(":composeApp")
-include(":meetings-android")
-include(":meetings-desktop")
-include(":meetings-shared")
-include(":core:uikit")
-include(":meetings-sdk")
+include(":kmp-library-base")
