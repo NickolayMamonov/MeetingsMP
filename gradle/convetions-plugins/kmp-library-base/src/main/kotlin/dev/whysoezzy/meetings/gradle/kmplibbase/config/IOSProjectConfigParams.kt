@@ -6,12 +6,12 @@ internal val supportedIOSTargetsParam = ProjectConfigParam(
     cmdParamName = "kmp.ios.platforms",
     androidLocalPropertyParamName = "kmp.ios.platforms",
     envParamName = "KMP_IOS_PLATFORMS",
-    defaultValue = "arm64,simulatorArmX64,simulatorIntelX64"
+    defaultValue = "arm64,simulatorArm64,simulatorIntelX64"
 )
 
 enum class IOSPlatform(val value: String) {
     ARM_64("arm64"),
-    SIMULATOR_ARM64("simulatorArmX64"),
+    SIMULATOR_ARM64("simulatorArm64"),
     SIMULATOR_X64("simulatorIntelX64"),
 }
 
