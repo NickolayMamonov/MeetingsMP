@@ -37,8 +37,10 @@ jobs:
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Common / multiplatform unit tests
-        run: ./gradlew allTests --stacktrace
+      # JVM-таргет в конвенциях объявлен как jvm("desktop") → тест-таск desktopTest.
+      # iOS (compileKotlinIosX64 и т.п.) собирается только на macOS — здесь не запускаем.
+      - name: Desktop (JVM) unit tests
+        run: ./gradlew desktopTest --stacktrace
 
       - name: Android unit tests
         run: ./gradlew testDebugUnitTest --stacktrace
