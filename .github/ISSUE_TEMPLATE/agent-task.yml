@@ -1,0 +1,106 @@
+name: "Задача для агента"
+description: "Структурированная задача для пайплайна plan → build → review. Заполни все обязательные поля — plan-агент использует их как вход."
+title: "[task]: "
+labels: ["agent-task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Эта форма — вход для агента `plan`. Чем точнее критерии приёмки и границы, тем меньше догадок.
+        Правила архитектуры и качества — в `AGENTS.md`. Не описывай реализацию: это сделает `plan`.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Тип задачи
+      options:
+        - "UI — новый экран / компонент"
+        - "Бизнес-логика / фича целиком"
+        - "Рефакторинг"
+        - "Инфраструктура (CI, сборка, тулинг)"
+        - "Багфикс"
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Цель (что и зачем)
+      description: Одним абзацем — какой результат и какую пользу даёт. Без описания реализации.
+      placeholder: "Пользователь должен видеть список сообществ с состояниями загрузки/ошибки/пустого списка…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст / текущее поведение
+      description: Что есть сейчас, где это живёт, какие данные/эндпоинты задействованы (через meetings-sdk).
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: modules
+    attributes:
+      label: Предполагаемые затронутые модули
+      description: Ориентир для plan; точный список он подтвердит сам. Логика → commonMain, UI → core:uikit/composeApp.
+      options:
+        - label: "meetings-shared (общая логика)"
+        - label: "meetings-sdk (сеть/данные, Ktor/Ktorfit)"
+        - label: "core:uikit (UI-компоненты, тема)"
+        - label: "composeApp (общий слой приложения)"
+        - label: "meetings-android (точка входа Android)"
+        - label: "meetings-desktop (точка входа Desktop)"
+        - label: "iOS entry (meetings-shared/iosMain)"
+        - label: "web (планируется, wasmJs)"
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки (объективные)
+      description: |
+        Только машинно-проверяемые сигналы. «Выглядит правильно» — не критерий.
+        Примеры: какой commonTest зелёный; какой Roborazzi golden совпадает; assembleDebug собирается; assert_* проходит.
+      placeholder: |
+        - commonTest: CommunitiesViewModelTest покрывает loading/content/empty/error
+        - Roborazzi: golden CommunitiesScreen_content / _error обновлены и совпадают
+        - assembleDebug собирается без ошибок
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Вне рамок / ограничения
+      description: Что НЕ нужно делать в этой задаче (чтобы агент не расширял скоуп).
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: needs_design
+    attributes:
+      label: Дизайн
+      options:
+        - label: "needs-design — требуется визуальная спека (прототип/скриншоты). Добавь метку needs-design к Issue."
+
+  - type: input
+    id: design_link
+    attributes:
+      label: Ссылка на спеку дизайна (если needs-design)
+      description: Ссылка на прототип Claude Design / макет / папку docs/design/.
+    validations:
+      required: false
+
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done
+      description: Финальный чеклист (можно оставить дефолт).
+      value: |
+        - [ ] Критерии приёмки выполнены и подтверждены объективно (зелёный CI)
+        - [ ] Модульные границы не нарушены (AGENTS.md §5)
+        - [ ] Тесты реальны и покрывают изменение
+        - [ ] Нет хардкода строк/цветов/URL, нет отладочного кода
+        - [ ] PR ссылается на этот Issue (Closes #), ревью пройдено
+    validations:
+      required: false

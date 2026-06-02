@@ -1,0 +1,82 @@
+name: Quality Checks
+
+# Объективный гейт качества для PR. Блокирующая часть (build + test) работает сразу.
+# Статический анализ (detekt/lint) и Roborazzi включаются после их подключения в проект —
+# см. job `static-analysis` (пока non-blocking).
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Unit Tests (blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Common / multiplatform unit tests
+        run: ./gradlew allTests --stacktrace
+
+      - name: Android unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Assemble Android (debug)
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: "**/build/reports/tests/**"
+          if-no-files-found: ignore
+
+  static-analysis:
+    name: Static Analysis (non-blocking until configured)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # ВКЛЮЧИТЬ В БЛОКИРУЮЩИЕ после подключения detekt:
+    #   1) добавить detekt в convention plugins / build,
+    #   2) убрать `continue-on-error`,
+    #   3) добавить job в branch protection required checks.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: detekt (требует подключения detekt)
+        run: ./gradlew detekt --stacktrace || echo "detekt ещё не подключён — это ожидаемо до Фазы 0"
+
+      - name: Android lint
+        run: ./gradlew lintDebug --stacktrace || echo "lint не настроен — пропускаем"
