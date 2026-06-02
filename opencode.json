@@ -1,17 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
 
-  "model": "opencode/deepseek-v4-flash",
+  "model": "opencode-go/deepseek-v4-flash",
   "autoshare": false,
 
-  "//provider_note": "GLM и DeepSeek идут через подписку Go: подключи их командой /connect → OpenCode Go → вставь Go-ключ. Префикс модели Go подтверди через /models (обычно opencode/<id> или opencode-go/<id>). Внешних провайдеров и BYOK нет — только Go.",
   "provider": {},
 
   "mcp": {
     "mobile": {
       "type": "local",
       "command": ["claude-in-mobile", "mcp"],
-      "enabled": true,
+      "enabled": false,
       "environment": {}
     }
   },
@@ -31,7 +30,7 @@
     "plan": {
       "description": "Design-first планирование и архитектура. Разбивает задачу на шаги, не меняет код.",
       "mode": "primary",
-      "model": "opencode/glm-5.1",
+      "model": "opencode-go/glm-5.1",
       "temperature": 0.1,
       "prompt": "{file:./.opencode/prompts/plan.md}",
       "permission": {
@@ -44,7 +43,7 @@
     "build": {
       "description": "Реализация в Kotlin/Compose. Внутренняя петля через MCP mobile. Сложный баг — поднять модель до opencode/deepseek-v4-pro.",
       "mode": "primary",
-      "model": "opencode/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.2,
       "prompt": "{file:./.opencode/prompts/build.md}",
       "permission": {
@@ -60,7 +59,7 @@
     "review": {
       "description": "Объективное ревью PR на DeepSeek V4 Pro. Другой режим/мощность, чем build (Flash); другое семейство, чем plan (GLM). Только чтение.",
       "mode": "subagent",
-      "model": "opencode/deepseek-v4-pro",
+      "model": "opencode-go/deepseek-v4-pro",
       "temperature": 0.1,
       "prompt": "{file:./.opencode/prompts/review.md}",
       "permission": {
