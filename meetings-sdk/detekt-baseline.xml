@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>NewLineAtEndOfFile:Auth.kt$dev.whysoezzy.meetingssdk.models.Auth.kt</ID>
+    <ID>NewLineAtEndOfFile:AuthToken.kt$dev.whysoezzy.meetingssdk.auth.AuthToken.kt</ID>
+    <ID>NewLineAtEndOfFile:CommunitiesApi.kt$dev.whysoezzy.meetingssdk.api.CommunitiesApi.kt</ID>
+    <ID>NewLineAtEndOfFile:Community.kt$dev.whysoezzy.meetingssdk.models.Community.kt</ID>
+    <ID>NewLineAtEndOfFile:ErrorResponse.kt$dev.whysoezzy.meetingssdk.models.ErrorResponse.kt</ID>
+    <ID>NewLineAtEndOfFile:Event.kt$dev.whysoezzy.meetingssdk.models.Event.kt</ID>
+    <ID>NewLineAtEndOfFile:FeedApi.kt$dev.whysoezzy.meetingssdk.api.FeedApi.kt</ID>
+    <ID>NewLineAtEndOfFile:Interest.kt$dev.whysoezzy.meetingssdk.models.Interest.kt</ID>
+    <ID>NewLineAtEndOfFile:InterestsApi.kt$dev.whysoezzy.meetingssdk.api.InterestsApi.kt</ID>
+    <ID>NewLineAtEndOfFile:MeetingsClient.kt$dev.whysoezzy.meetingssdk.MeetingsClient.kt</ID>
+    <ID>NewLineAtEndOfFile:RequestBodies.kt$dev.whysoezzy.meetingssdk.models.RequestBodies.kt</ID>
+    <ID>NewLineAtEndOfFile:User.kt$dev.whysoezzy.meetingssdk.models.User.kt</ID>
+    <ID>NewLineAtEndOfFile:UsersApi.kt$dev.whysoezzy.meetingssdk.api.UsersApi.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>

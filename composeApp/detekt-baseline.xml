@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>NewLineAtEndOfFile:ComposeAppCommonTest.kt$dev.whysoezzy.meetings.ComposeAppCommonTest.kt</ID>
+    <ID>NewLineAtEndOfFile:MeetingsApp.kt$dev.whysoezzy.meetings.compose.MeetingsApp.kt</ID>
+    <ID>PreviewPublic:MeetingsApp.kt$MeetingsApp</ID>
+    <ID>WildcardImport:MeetingsApp.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

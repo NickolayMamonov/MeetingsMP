@@ -3,6 +3,7 @@ import dev.whysoezzy.meetings.gradle.kmplibbase.kmpConfig
 import dev.whysoezzy.meetings.gradle.kmplibbase.libs
 
 plugins.applyIfNeeded(libs.plugins.jetbrains.kotlin.multiplatform.get().pluginId)
+plugins.applyIfNeeded("detekt")
 
 kmpConfig {
     sourceSets {

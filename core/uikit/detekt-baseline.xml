@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>MagicNumber:Colors.kt$0xFF000000</ID>
+    <ID>MagicNumber:Colors.kt$0xFF1A1A1A</ID>
+    <ID>MagicNumber:Colors.kt$0xFF1DC0A6</ID>
+    <ID>MagicNumber:Colors.kt$0xFF21003D</ID>
+    <ID>MagicNumber:Colors.kt$0xFF242424</ID>
+    <ID>MagicNumber:Colors.kt$0xFF2E2E2E</ID>
+    <ID>MagicNumber:Colors.kt$0xFF383838</ID>
+    <ID>MagicNumber:Colors.kt$0xFF410002</ID>
+    <ID>MagicNumber:Colors.kt$0xFF444444</ID>
+    <ID>MagicNumber:Colors.kt$0xFF4A4458</ID>
+    <ID>MagicNumber:Colors.kt$0xFF4B006E</ID>
+    <ID>MagicNumber:Colors.kt$0xFF5A6A8E</ID>
+    <ID>MagicNumber:Colors.kt$0xFF5C5C5C</ID>
+    <ID>MagicNumber:Colors.kt$0xFF6D009F</ID>
+    <ID>MagicNumber:Colors.kt$0xFF7A7289</ID>
+    <ID>MagicNumber:Colors.kt$0xFF8B9BB4</ID>
+    <ID>MagicNumber:Colors.kt$0xFF9000D4</ID>
+    <ID>MagicNumber:Colors.kt$0xFFBA1A1A</ID>
+    <ID>MagicNumber:Colors.kt$0xFFBE5FFF</ID>
+    <ID>MagicNumber:Colors.kt$0xFFCBC2DB</ID>
+    <ID>MagicNumber:Colors.kt$0xFFCCCCCC</ID>
+    <ID>MagicNumber:Colors.kt$0xFFDFAEFF</ID>
+    <ID>MagicNumber:Colors.kt$0xFFE5E5E5</ID>
+    <ID>MagicNumber:Colors.kt$0xFFE8DEF8</ID>
+    <ID>MagicNumber:Colors.kt$0xFFE8E8E8</ID>
+    <ID>MagicNumber:Colors.kt$0xFFECECEC</ID>
+    <ID>MagicNumber:Colors.kt$0xFFF3D9FF</ID>
+    <ID>MagicNumber:Colors.kt$0xFFF3F3F3</ID>
+    <ID>MagicNumber:Colors.kt$0xFFF7F7F7</ID>
+    <ID>MagicNumber:Colors.kt$0xFFFAEFFF</ID>
+    <ID>MagicNumber:Colors.kt$0xFFFAFAFA</ID>
+    <ID>MagicNumber:Colors.kt$0xFFFFB4AB</ID>
+    <ID>MagicNumber:Colors.kt$0xFFFFDAD6</ID>
+    <ID>MagicNumber:Colors.kt$0xFFFFFFFF</ID>
+    <ID>NewLineAtEndOfFile:Colors.kt$uikit.Colors.kt</ID>
+    <ID>NewLineAtEndOfFile:MeetingsTheme.kt$uikit.MeetingsTheme.kt</ID>
+    <ID>NewLineAtEndOfFile:Shapes.kt$uikit.Shapes.kt</ID>
+    <ID>NewLineAtEndOfFile:Typography.kt$uikit.Typography.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>
