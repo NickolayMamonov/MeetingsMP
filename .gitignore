@@ -15,4 +15,19 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+build/.claude/settings.local.json
+
+# Build
 build/
+*/build/
+**/build/
+.gradle/
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+local.properties
+
+# Local
+.claude/settings.local.json
