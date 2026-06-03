@@ -22,6 +22,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+
 private typealias AndroidExtensions = CommonExtension<
         out BuildFeatures,
         out BuildType,
@@ -77,3 +79,9 @@ internal fun LibrariesForLibs.jvmTarget(): JvmTarget {
     require(jdkVersion >= 10)
     return JvmTarget.valueOf("JVM_$jdkVersion")
 }
+
+private val Project.detektExtension: DetektExtension
+    get() = extensions.findByType(DetektExtension::class.java)
+        ?: error("Detekt plugin is not applied")
+
+internal fun Project.detektConfig(block: DetektExtension.() -> Unit) = detektExtension.block()
