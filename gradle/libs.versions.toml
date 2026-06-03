@@ -27,6 +27,7 @@ detekt = "1.23.7"
 compose-rules = "0.4.22"
 ktlint = "1.5.0"
 
+
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
