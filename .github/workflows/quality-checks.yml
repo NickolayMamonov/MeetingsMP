@@ -57,6 +57,14 @@ jobs:
           path: "**/build/reports/tests/**"
           if-no-files-found: ignore
 
+      - name: Upload Gradle problems report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-problems-report
+          path: build/reports/problems
+          if-no-files-found: ignore
+
   detekt:
     name: Detekt (blocking)
     runs-on: ubuntu-latest
