@@ -2,6 +2,7 @@ import dev.whysoezzy.meetings.gradle.kmplibbase.applyIfNeeded
 import dev.whysoezzy.meetings.gradle.kmplibbase.detektConfig
 import dev.whysoezzy.meetings.gradle.kmplibbase.libs
 import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 
 plugins.applyIfNeeded(libs.plugins.detekt.get().pluginId)
 
@@ -59,6 +60,16 @@ tasks.withType<Detekt>().configureEach {
             }
         }
     }
+}
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+    setSource(projectDir)
+    include("**/src/*/kotlin/**/*.kt")
+
+    exclude(
+        "gradle/conventions-plugins",
+        "**/build/generated/",
+    )
 }
 
 dependencies.add("detektPlugins", libs.detektPlugin.nlopez.composeRules)

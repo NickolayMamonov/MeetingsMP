@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>NewLineAtEndOfFile:MainViewController.kt$dev.whysoezzy.meetings.MainViewController.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>
