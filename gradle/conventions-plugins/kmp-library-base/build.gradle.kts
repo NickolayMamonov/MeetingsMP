@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.gradleplugins.kotlin)
     implementation(libs.gradleplugins.compose)
     implementation(libs.gradleplugins.composeCompiler)
+    implementation(libs.gradleplugins.detekt)
     implementation(libs.gradleplugins.kotlinxSerialization)
 
     // Workaround for version catalog working inside precompiled scripts
