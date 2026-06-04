@@ -3,6 +3,14 @@ package dev.whysoezzy.meetingssdk.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Short representation of a community, used in lists and preview cards.
+ *
+ * @property id Unique identifier of the community.
+ * @property name Name of the community.
+ * @property avatarUrl Optional URL to the community's avatar.
+ * @property subscribersCount Number of subscribers/members.
+ */
 @Serializable
 data class CommunityShort(
     val id: String,
@@ -11,6 +19,20 @@ data class CommunityShort(
     @SerialName("subscribersCount") val subscribersCount: Int
 )
 
+/**
+ * Full community details including description, events, and subscription status.
+ *
+ * @property id Unique identifier of the community.
+ * @property name Name of the community.
+ * @property description Optional description of the community.
+ * @property avatarUrl Optional URL to the community's avatar.
+ * @property subscribersCount Number of subscribers/members.
+ * @property tags List of interest tags associated with the community.
+ * @property subscribersPreview List of a few subscribers for preview.
+ * @property upcomingEvents List of upcoming events organized by the community.
+ * @property pastEvents Paginated list of past events.
+ * @property isSubscribed Whether the current user is subscribed to this community.
+ */
 @Serializable
 data class CommunityFull(
     val id: String,
@@ -25,6 +47,11 @@ data class CommunityFull(
     @SerialName("isSubscribed") val isSubscribed: Boolean = false
 )
 
+/**
+ * Response containing the updated subscriber count after a subscription action.
+ *
+ * @property subscribersCount Current number of subscribers.
+ */
 @Serializable
 data class SubscriptionCount(
     @SerialName("subscribersCount") val subscribersCount: Int
