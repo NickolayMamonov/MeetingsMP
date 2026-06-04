@@ -1,10 +1,5 @@
 name: Quality Checks
 
-# Объективный гейт качества для PR.
-# Блокирующие проверки: build + test + detekt.
-# Неблокирующие (информационные): Android lint.
-# Для блокировки мержа добавьте job `detekt` в required status checks (Settings → Rules).
-
 on:
   pull_request:
     branches: [main, develop]
@@ -17,6 +12,8 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
   build-and-test:
@@ -38,8 +35,6 @@ jobs:
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
 
-      # JVM-таргет в конвенциях объявлен как jvm("desktop") → тест-таск desktopTest.
-      # iOS (compileKotlinIosX64 и т.п.) собирается только на macOS — здесь не запускаем.
       - name: Desktop (JVM) unit tests
         run: ./gradlew desktopTest --stacktrace
 
@@ -69,7 +64,6 @@ jobs:
     name: Detekt (blocking)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Для блокировки мержа добавьте job `detekt` в required status checks (Settings → Rules).
     steps:
       - uses: actions/checkout@v4
 
@@ -123,3 +117,44 @@ jobs:
           name: android-lint-reports
           path: "**/build/reports/lint-results-debug.*"
           if-no-files-found: ignore
+
+  pr-comment:
+    name: PR Summary Comment
+    if: github.event_name == 'pull_request'
+    needs: [build-and-test, detekt, android-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Post results comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            const prNumber = context.payload.pull_request.number
+
+            const buildResult = "${{ needs.build-and-test.result }}"
+            const detektResult = "${{ needs.detekt.result }}"
+            const lintResult = "${{ needs.android-lint.result }}"
+
+            const statusIcon = (r) => r === "success" ? "✅" : r === "skipped" ? "⏭️" : "❌"
+
+            const body = `## Quality Gates Report
+
+| Gate | Status |
+|------|--------|
+| Build & Unit Tests | ${statusIcon(buildResult)} ${buildResult} |
+| Detekt | ${statusIcon(detektResult)} ${detektResult} |
+| Android Lint | ${statusIcon(lintResult)} ${lintResult} |
+
+${buildResult === "failure" ? "### Build failed
+Check the logs for details." : ""}
+${detektResult === "failure" ? "### Detekt issues found
+Run \`./gradlew detekt\` locally and fix violations." : ""}
+`
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body,
+            })
