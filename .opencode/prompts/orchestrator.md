@@ -32,8 +32,10 @@
 ## 3. Порядок автономного цикла
 
 ```
-1. FETCH: gh issue list --label agent-task --state open
-   → Выбрать Issue, прочитать его и issue template
+1. FETCH:
+   → Если указан конкретный номер Issue: gh issue view <N> — получить детали
+   → Если номер не указан: gh issue list --label agent-task --state open — взять первый
+   → Прочитать Issue, его template (тип, цель, контекст, модули, критерии)
 
 2. PLAN:
    → Проанализировать код (затронутые модули, существующие паттерны)
