@@ -2,18 +2,10 @@
   "$schema": "https://opencode.ai/config.json",
 
   "model": "opencode-go/deepseek-v4-flash",
+  "default_agent": "orchestrator",
   "autoshare": false,
 
   "provider": {},
-
-  "mcp": {
-    "mobile": {
-      "type": "local",
-      "command": ["claude-in-mobile", "mcp"],
-      "enabled": false,
-      "environment": {}
-    }
-  },
 
   "permission": {
     "edit": "allow",
@@ -27,12 +19,40 @@
   },
 
   "agent": {
-    "plan": {
-      "description": "Design-first планирование и архитектура. Разбивает задачу на шаги, не меняет код.",
+    "orchestrator": {
+      "description": "Автоматический цикл: берёт Issue из бэклога → plan → build/developer-complex → review → CI/CD → PR. Координирует через @-делегирование. Без участия человека кроме финального мержа.",
       "mode": "primary",
+      "model": "opencode-go/glm-5.1",
+      "temperature": 0.2,
+      "prompt": "{file:./.opencode/prompts/orchestrator.md}",
+      "steps": 60,
+      "color": "#4FC3F7",
+      "permission": {
+        "edit": "ask",
+        "bash": {
+          "*": "allow",
+          "git push*": "ask",
+          "git push --force*": "deny",
+          "gh pr merge*": "deny"
+        },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "webfetch": "allow",
+        "skill": "allow",
+        "task": {
+          "*": "deny"
+        }
+      }
+    },
+
+    "plan": {
+      "description": "Design-first планирование и архитектура. Разбивает задачу на шаги, не меняет код. Доступен как primary (Tab) и как subagent (@plan) для оркестратора.",
+      "mode": "all",
       "model": "opencode-go/glm-5.1",
       "temperature": 0.1,
       "prompt": "{file:./.opencode/prompts/plan.md}",
+      "color": "#FFCC80",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -41,27 +61,61 @@
     },
 
     "build": {
-      "description": "Реализация в Kotlin/Compose. Внутренняя петля через MCP mobile. Сложный баг — поднять модель до opencode/deepseek-v4-pro.",
-      "mode": "primary",
+      "description": "Разработка в Kotlin/Compose. Внутренняя петля через MCP mobile. Для простых и средних задач. Доступен как primary (Tab) и как subagent (@build) для оркестратора.",
+      "mode": "all",
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.2,
       "prompt": "{file:./.opencode/prompts/build.md}",
+      "color": "#66BB6A",
       "permission": {
         "edit": "allow",
         "bash": {
           "*": "allow",
           "git push*": "ask",
           "git push --force*": "deny"
+        },
+        "task": {
+          "*": "deny",
+          "explore": "allow"
         }
       }
     },
 
-    "review": {
-      "description": "Объективное ревью PR на DeepSeek V4 Pro. Другой режим/мощность, чем build (Flash); другое семейство, чем plan (GLM). Только чтение.",
+    "developer-complex": {
+      "description": "Старший разработчик для сложных KMP задач: архитектура, expect/actual, мультиплатформенные решения. DeepSeek V4 Pro. Вызывается оркестратором для комплексных Issue.",
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4-pro",
       "temperature": 0.1,
+      "prompt": "{file:./.opencode/prompts/developer-complex.md}",
+      "steps": 120,
+      "color": "#43A047",
+      "permission": {
+        "edit": "allow",
+        "bash": {
+          "*": "allow",
+          "git push*": "ask",
+          "git push --force*": "deny"
+        },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "skill": { "*": "allow" },
+        "webfetch": "allow",
+        "task": {
+          "*": "deny",
+          "explore": "allow"
+        },
+        "mobile_*": "allow"
+      }
+    },
+
+    "review": {
+      "description": "Объективное ревью PR на DeepSeek V4 Pro. Кросс-модельность (другое семейство чем build и plan). Только чтение.",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-pro",
+      "temperature": 0.0,
       "prompt": "{file:./.opencode/prompts/review.md}",
+      "color": "#EF5350",
       "permission": {
         "edit": "deny",
         "read": "allow",
@@ -74,9 +128,89 @@
           "git log*": "allow",
           "./gradlew *test*": "allow",
           "./gradlew *detekt*": "allow",
-          "./gradlew *lint*": "allow"
+          "./gradlew *lint*": "allow",
+          "./gradlew assembleDebug*": "allow"
         }
       }
+    },
+
+    "ci-cd": {
+      "description": "CI/CD агент: запускает build/test/lint/detekt, проверяет объективный гейт, создаёт PR. Не модифицирует код.",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.0,
+      "prompt": "{file:./.opencode/prompts/ci-cd.md}",
+      "steps": 40,
+      "color": "#FFA726",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "./gradlew*": "allow",
+          "git branch*": "allow",
+          "git log*": "allow",
+          "git status*": "allow",
+          "git push*": "ask",
+          "gh pr create*": "allow",
+          "gh pr view*": "allow",
+          "gh pr comment*": "allow",
+          "gh issue*": "allow"
+        },
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
+      }
     }
+  },
+
+  "command": {
+    "cycle": {
+      "template": "Запусти полный автоматический цикл разработки:\n1. Найди следующий открытый Issue с меткой 'agent-task'\n2. Проанализируй код и создай план реализации\n3. Создай ветку feature/<issue>-<slug> от develop\n4. Реализуй задачу строго по плану\n5. Сделай self-review: модульные границы, тесты, detekt\n6. Прогони локальный гейт и создай PR\n7. Доложи результат\n\nВАЖНО: не используй Task tool. Делай всё сам inline.",
+      "description": "Полный автоцикл: Issue → plan → code → review → CI/CD → PR",
+      "agent": "orchestrator"
+    },
+    "next-issue": {
+      "template": "Возьми следующий открытый Issue с меткой 'agent-task' из GitHub. Изучи его, определи сложность и создай детальный план реализации через @plan. Не начинай кодить — только анализ и план.",
+      "description": "Взять следующий Issue и спланировать (без кода)",
+      "agent": "orchestrator"
+    },
+    "implement": {
+      "template": "Реализуй текущую задачу согласно утверждённому плану. Используй @developer-complex для сложных задач и @build для простых. После реализации прогнай локальный гейт (detekt + desktopTest + testDebugUnitTest + assembleDebug).",
+      "description": "Реализовать текущую задачу (plan → code → локальный гейт)",
+      "agent": "orchestrator"
+    },
+    "review": {
+      "template": "Проведи ревью всех незакоммиченных изменений в текущей ветке или открой PR и вызови @review. Фокус: KMP-границы, тесты, гейт.",
+      "description": "Ревью текущих изменений",
+      "agent": "orchestrator"
+    },
+    "fix-review": {
+      "template": "Ревьюер нашёл замечания. Исправь их строго по списку. $ARGUMENTS",
+      "description": "Исправить замечания после ревью",
+      "agent": "build"
+    },
+    "deploy": {
+      "template": "Запусти CI/CD пайплайн: прогони локальный гейт через @ci-cd, создай PR если всё зелёное.",
+      "description": "CI/CD: гейт → PR",
+      "agent": "orchestrator"
+    }
+  },
+
+  "instructions": ["AGENTS.md", ".opencode/rules/kmp-patterns.md"],
+
+  "mcp": {
+    "mobile": {
+      "type": "local",
+      "command": ["claude-in-mobile", "mcp"],
+      "enabled": false,
+      "environment": {}
+    }
+  },
+
+  "formatter": true,
+  "lsp": true,
+  "compaction": {
+    "auto": true,
+    "prune": true
   }
 }
