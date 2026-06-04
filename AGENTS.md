@@ -49,6 +49,33 @@
 - Подключение таргетов — только через существующие convention plugins
   (`kmp.library.*`, `jetbrains-compose.*`), не дублировать конфиг в build-файлах модулей.
 
+### 5a. Миграция из Meeting Android — куда класть код
+
+Весь код, переносимый из Meeting Android (https://github.com/NickolayMamonov/Meeting),
+размещается в **meetings-sdk** (НЕ в meetings-shared).
+
+| Тип кода | Куда (meetings-sdk) | Пакет |
+|----------|---------------------|-------|
+| Domain-модели | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetings.domain.models` |
+| Утилиты / ErrorType / CrashReporter | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetings.common.*` |
+| DTO / мапперы | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetingssdk.models` |
+| API-интерфейсы / Ktor-клиенты | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetingssdk.api` |
+| UseCases / Repository-интерфейсы | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetings.domain.*` |
+| ViewModel-ы | `composeApp/src/commonMain/` | `dev.whysoezzy.meetings.*.presentation` |
+| Composable-экраны | `composeApp/src/commonMain/` | `dev.whysoezzy.meetings.*.presentation` |
+
+**Почему не meetings-shared:** модуль meetings-shared содержит только iOS-таргет
+(iosMain). У него нет desktop-таргета, поэтому `desktopTest` и `compileKotlinDesktop`
+для него недоступны. meetings-sdk имеет все таргеты (android, desktop, ios).
+
+**Платформенно-специфичный код (expect/actual):**
+- `expect` — в `meetings-sdk/src/commonMain/`
+- `actual` (Android) — в `meetings-sdk/src/androidMain/`
+- `actual` (Desktop) — в `meetings-sdk/src/desktopMain/`
+- `actual` (iOS) — в `meetings-sdk/src/iosMain/`
+
+**Не редактировать meetings-shared/build.gradle.kts** — миграционный код туда не кладётся.
+
 ## 6. Локальный гейт перед коммитом
 
 Запускать и добиваться зелёного:
