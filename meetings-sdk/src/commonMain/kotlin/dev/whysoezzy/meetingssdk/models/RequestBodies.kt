@@ -4,73 +4,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Тело запроса на отправку кода подтверждения.
+ * Request body for sending an authentication code to a phone number.
  *
- * @property phone Номер телефона пользователя.
- * @property firstName Имя пользователя.
+ * @property phone Phone number to send the code to.
+ * @property firstName User's first name for registration purposes.
  */
 @Serializable
 data class RequestCodeBody(
     val phone: String,
     @SerialName("firstName") val firstName: String
-)
-
-/**
- * Тело запроса на подтверждение кода аутентификации.
- *
- * @property phone Номер телефона пользователя.
- * @property code Код подтверждения, полученный по SMS.
- */
-@Serializable
-data class VerifyCodeBody(
-    val phone: String,
-    val code: String
-)
-
-/**
- * Тело запроса на обновление интересов пользователя.
- *
- * @property interestsIds Список идентификаторов интересов.
- */
-@Serializable
-data class UpdateInterestsBody(
-    @SerialName("interestsIds") val interestsIds: List<String>
-)
-
-/**
- * Тело запроса на обновление профиля пользователя.
- *
- * Все поля опциональны — обновляются только переданные значения.
- *
- * @property firstName Имя пользователя.
- * @property city Город проживания.
- * @property bio Краткая информация о пользователе.
- * @property showCommunities Флаг отображения сообществ в профиле.
- * @property showEvents Флаг отображения событий в профиле.
- * @property notificationsEnabled Флаг включения уведомлений.
- * @property socialLinks Список ссылок на социальные сети.
- */
-@Serializable
-data class UpdateUserBody(
-    @SerialName("firstName") val firstName: String? = null,
-    val city: String? = null,
-    val bio: String? = null,
-    @SerialName("showCommunities") val showCommunities: Boolean? = null,
-    @SerialName("showEvents") val showEvents: Boolean? = null,
-    @SerialName("notificationEnabled") val notificationsEnabled: Boolean? = null,
-    @SerialName("socialLinks") val socialLinks: List<SocialLink>? = null
-)
-
-/**
- * Тело запроса на регистрацию устройства для push-уведомлений.
- *
- * @property token Токен устройства (FCM / APNs).
- * @property platform Платформа устройства (например, "android" или "ios").
- */
-@Serializable
-data class DeviceTokenBody(
-    val token: String,
-    val platform: String
 )
 
 /**

@@ -4,22 +4,19 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Краткая информация о событии.
+ * Short representation of an event, typically used in lists and preview cards.
  *
- * Используется в списках и превью. В отличие от [EventFull],
- * не содержит описания, статуса и других деталей.
- *
- * @property id Идентификатор события.
- * @property title Название события.
- * @property imageUrl URL изображения события.
- * @property date Дата проведения.
- * @property time Время проведения.
- * @property address Адрес проведения.
- * @property venueName Название места проведения.
- * @property metroStation Станция метро рядом с местом проведения.
- * @property attendeesCount Количество участников.
- * @property tags Теги / интересы события.
- * @property community Сообщество-организатор события.
+ * @property id Unique identifier of the event.
+ * @property title Event title.
+ * @property imageUrl Optional URL to the event's cover image.
+ * @property date Event date (ISO 8601 or server-defined format).
+ * @property time Event time (HH:mm or server-defined format).
+ * @property address Optional street address of the event.
+ * @property venueName Optional name of the venue.
+ * @property metroStation Optional nearest metro station.
+ * @property attendeesCount Number of registered attendees.
+ * @property tags List of interest tags associated with the event.
+ * @property community Optional community that organizes the event.
  */
 @Serializable
 data class EventShort(
@@ -34,93 +31,6 @@ data class EventShort(
     @SerialName("attendeesCount") val attendeesCount: Int,
     val tags: List<Interest> = emptyList(),
     val community: CommunityShort? = null
-)
-
-/**
- * Полная информация о событии.
- *
- * В отличие от [EventShort], содержит описание, информацию о спикере,
- * вместимость, статус, превью участников, связанные события
- * и статус регистрации текущего пользователя.
- *
- * @property id Идентификатор события.
- * @property title Название события.
- * @property description Описание события.
- * @property imageUrl URL изображения события.
- * @property date Дата проведения.
- * @property time Время проведения.
- * @property address Адрес проведения.
- * @property venueName Название места проведения.
- * @property metroStation Станция метро рядом с местом проведения.
- * @property capacity Вместимость площадки.
- * @property attendeesCount Количество участников.
- * @property status Статус события (предстоящее / прошедшее).
- * @property tags Теги / интересы события.
- * @property speaker Информация о спикере.
- * @property community Сообщество-организатор события.
- * @property attendeesPreview Превью участников события.
- * @property relatedEvents Связанные события.
- * @property isRegistered Флаг регистрации текущего пользователя.
- */
-@Serializable
-data class EventFull(
-    val id: String,
-    val title: String,
-    val description: String? = null,
-    @SerialName("imageUrl") val imageUrl: String? = null,
-    val date: String,
-    val time: String,
-    val address: String? = null,
-    @SerialName("venueName") val venueName: String? = null,
-    @SerialName("metroStation") val metroStation: String? = null,
-    val capacity: Int? = null,
-    @SerialName("attendeesCount") val attendeesCount: Int,
-    val status: EventStatus,
-    val tags: List<Interest> = emptyList(),
-    val speaker: EventSpeaker? = null,
-    val community: CommunityShort? = null,
-    @SerialName("attendeesPreview") val attendeesPreview: List<UserShort> = emptyList(),
-    @SerialName("relatedEvents") val relatedEvents: List<EventShort> = emptyList(),
-    @SerialName("isRegistered") val isRegistered: Boolean = false
-)
-
-/**
- * Статус события.
- *
- * @property UPCOMING Предстоящее событие.
- * @property PAST Прошедшее событие.
- */
-@Serializable
-enum class EventStatus {
-    UPCOMING, PAST
-}
-
-/**
- * Информация о спикере события.
- *
- * @property id Идентификатор спикера.
- * @property firstName Имя спикера.
- * @property bio Краткая биография спикера.
- * @property avatarUrl URL аватара спикера.
- */
-@Serializable
-data class EventSpeaker(
-    val id: String,
-    @SerialName("firstName") val firstName: String,
-    val bio: String? = null,
-    @SerialName("avatarUrl") val avatarUrl: String? = null
-)
-
-/**
- * Регистрация пользователя на событие.
- *
- * @property eventId Идентификатор события.
- * @property registeredAt Дата и время регистрации.
- */
-@Serializable
-data class Registration(
-    @SerialName("eventId") val eventId: String,
-    @SerialName("registeredAt") val registeredAt: String
 )
 
 /**

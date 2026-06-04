@@ -1,32 +1,18 @@
 package dev.whysoezzy.meetingssdk.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Результат поиска по событиям и сообществам.
+ * Response returned by the search endpoint containing matching events and communities.
  *
- * @property events Список найденных событий.
- * @property communities Список найденных сообществ.
+ * @property events List of events matching the search query.
+ * @property communities List of communities matching the search query.
  */
 @Serializable
 data class SearchResponse(
     val events: List<EventShort>,
     val communities: List<CommunityShort>
-)
-
-/**
- * Обобщённый ответ сервера с пагинацией.
- *
- * @param T Тип элементов в списке.
- * @property items Список элементов текущей страницы.
- * @property cursor Курсор для получения следующей страницы. `null`, если страниц больше нет.
- * @property total Общее количество элементов.
- */
-@Serializable
-data class PaginatedResponse<T>(
-    val items: List<T>,
-    val cursor: String? = null,
-    val total: Int
 )
 
 /**

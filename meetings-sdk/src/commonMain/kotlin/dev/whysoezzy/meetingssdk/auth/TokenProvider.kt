@@ -32,24 +32,3 @@ class InMemoryTokenProvider : TokenProvider {
     override fun setToken(token: AuthToken?) { this.token = token }
     override fun clear() { token = null }
 }
-
-/**
- * In-memory реализация [TokenProvider].
- *
- * Хранит токен в оперативной памяти. Токен не переживает перезапуск приложения.
- * Подходит для прототипирования и тестов. Для продакшена используйте
- * реализацию с персистентным хранением.
- */
-class InMemoryTokenProvider : TokenProvider {
-    private var token: AuthToken? = null
-
-    override fun getToken(): AuthToken? = token
-
-    override fun setToken(token: AuthToken?) {
-        this.token = token
-    }
-
-    override fun clear() {
-        token = null
-    }
-}

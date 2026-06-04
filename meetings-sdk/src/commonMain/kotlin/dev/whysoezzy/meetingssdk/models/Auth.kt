@@ -28,21 +28,3 @@ data class AuthResponse(
     @SerialName("isNewUser") val isNewUser: Boolean,
     @SerialName("isRecovered") val isRecovered: Boolean
 )
-
-/**
- * Ответ сервера на подтверждение кода аутентификации.
- *
- * Содержит JWT-токен и профиль пользователя.
- *
- * @property token JWT-токен для последующей аутентификации запросов.
- * @property user Профиль пользователя.
- * @property isNewUser Флаг, указывающий, что пользователь создан впервые.
- * @property isRecovered Флаг, указывающий, что аккаунт был восстановлен.
- */
-@Serializable
-data class AuthResponse(
-    val token: String,
-    val user: UserProfile,
-    @SerialName("isNewUser") val isNewUser: Boolean,
-    @SerialName("isRecovered") val isRecovered: Boolean
-)
