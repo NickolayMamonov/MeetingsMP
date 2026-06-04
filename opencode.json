@@ -41,14 +41,7 @@
         "webfetch": "allow",
         "skill": "allow",
         "task": {
-          "*": "deny",
-          "plan": "allow",
-          "build": "allow",
-          "developer-complex": "allow",
-          "review": "allow",
-          "ci-cd": "allow",
-          "explore": "allow",
-          "general": "allow"
+          "*": "deny"
         }
       }
     },
@@ -172,7 +165,7 @@
 
   "command": {
     "cycle": {
-      "template": "Запусти полный автоматический цикл разработки:\n1. Найди следующий открытый Issue с меткой 'agent-task'\n2. Создай ветку feature/<issue>-<slug> через git worktree\n3. Вызови @plan для проектирования решения\n4. В зависимости от сложности — @build или @developer-complex для реализации\n5. Вызови @review для ревью\n6. При замечаниях — вернись к разработчику на исправление\n7. Вызови @ci-cd для проверки гейта и создания PR\n8. Доложи результат",
+      "template": "Запусти полный автоматический цикл разработки:\n1. Найди следующий открытый Issue с меткой 'agent-task'\n2. Проанализируй код и создай план реализации\n3. Создай ветку feature/<issue>-<slug> от develop\n4. Реализуй задачу строго по плану\n5. Сделай self-review: модульные границы, тесты, detekt\n6. Прогони локальный гейт и создай PR\n7. Доложи результат\n\nВАЖНО: не используй Task tool. Делай всё сам inline.",
       "description": "Полный автоцикл: Issue → plan → code → review → CI/CD → PR",
       "agent": "orchestrator"
     },
