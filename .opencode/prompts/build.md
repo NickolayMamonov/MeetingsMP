@@ -57,10 +57,10 @@
 
 ## ЭТАП 2. Локальный гейт перед коммитом (добиться зелёного)
 ```
-./gradlew detekt                 # если detekt подключён
-./gradlew allTests               # common/мультиплатформенные unit
-./gradlew testDebugUnitTest      # android unit
-./gradlew assembleDebug          # сборка Android
+./gradlew detekt --no-daemon --console=plain            # статанализ (теперь работает)
+./gradlew desktopTest --no-daemon --console=plain        # JVM/common unit
+./gradlew testDebugUnitTest --no-daemon --console=plain  # android unit
+./gradlew assembleDebug --no-daemon --console=plain      # сборка Android
 ```
 Для UI — добавить/обновить Roborazzi golden и приложить дифф к PR. При красном — не коммитить, чинить.
 
