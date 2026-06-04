@@ -1,10 +1,5 @@
 name: Quality Checks
 
-# Объективный гейт качества для PR.
-# Блокирующие проверки: build + test + detekt.
-# Неблокирующие (информационные): Android lint.
-# Для блокировки мержа добавьте job `detekt` в required status checks (Settings → Rules).
-
 on:
   pull_request:
     branches: [main, develop]
@@ -38,8 +33,6 @@ jobs:
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
 
-      # JVM-таргет в конвенциях объявлен как jvm("desktop") → тест-таск desktopTest.
-      # iOS (compileKotlinIosX64 и т.п.) собирается только на macOS — здесь не запускаем.
       - name: Desktop (JVM) unit tests
         run: ./gradlew desktopTest --stacktrace
 
@@ -69,7 +62,6 @@ jobs:
     name: Detekt (blocking)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Для блокировки мержа добавьте job `detekt` в required status checks (Settings → Rules).
     steps:
       - uses: actions/checkout@v4
 

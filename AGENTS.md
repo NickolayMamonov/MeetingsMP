@@ -80,11 +80,44 @@
 лежит в Issue / `docs/design/`. Критерий приёмки — собранный Compose-экран совпадает с прототипом
 (сверка через Roborazzi golden). Перевод прототипа в Compose делает агент `build`.
 
-## 9. Модели и стиль
+## 9. Модели и оркестрация
 
-- `plan` — сильное рассуждение (GLM-5.1); `build` — быстрая модель (DeepSeek V4 Flash),
-  на сложный баг поднимать до `deepseek-v4-pro` вручную; `review` — `deepseek-v4-pro`.
-- `review` разведён с `build` по модели (Pro vs Flash) и с `plan` по семейству (DeepSeek vs GLM) —
-  это максимум кросс-модельности из двух семейств. Используем только GLM и DeepSeek (через Go).
-- Коммиты: Conventional Commits, на русском или английском, в теле — ссылка `Closes #<issue>`.
+### Агенты и их модели
+
+| Агент | Режим | Модель | Роль |
+|-------|-------|--------|------|
+| `orchestrator` | primary | GLM-5.1 | Автоматический цикл: координация plan → build → review → CI/CD → PR |
+| `plan` | all | GLM-5.1 | Анализ Issue и проектирование решения (read-only) |
+| `build` | all | DeepSeek V4 Flash | Реализация простых/средних задач |
+| `developer-complex` | subagent | DeepSeek V4 Pro | Реализация сложных задач (архитектура, expect/actual, новые модули) |
+| `review` | subagent | DeepSeek V4 Pro | Объективное ревью (другое семейство чем build/plan) |
+| `ci-cd` | subagent | DeepSeek V4 Flash | Локальный гейт + создание PR |
+
+`review` разведён с `build` по модели (Pro vs Flash) и с `plan` по семейству (DeepSeek vs GLM) —
+это максимум кросс-модельности из двух семейств. Используем только GLM и DeepSeek (через Go).
+
+### Автоматический цикл (orchestrator)
+
+При запуске `/cycle` или выборе агента `orchestrator`:
+
+1. **FETCH** — `gh issue list --label agent-task --state open` → выбрать Issue
+2. **PLAN** — `@plan` проектирует решение (если плана ещё нет в Issue)
+3. **BRANCH** — создать `feature/<issue>-<slug>`, изолировать через git worktree
+4. **BUILD** — сложные задачи → `@developer-complex`; простые → `@build`
+5. **REVIEW** — `@review` проверяет код; при замечаниях → возврат к build
+6. **CI/CD** — `@ci-cd` прогоняет гейт и создаёт PR
+7. **MERGE** — только человек (CODEOWNERS), не агент
+
+### Команды
+
+- `/cycle` — полный автоцикл: Issue → plan → code → review → CI/CD → PR
+- `/next-issue` — взять Issue и спроектировать (без кода)
+- `/implement` — реализовать текущую задачу (plan → code → гейт)
+- `/review` — ревью текущих изменений или PR
+- `/fix-review` — исправить замечания ревьюера
+- `/deploy` — CI/CD: гейт → PR
+
+### Стиль
+
+- Коммиты: Conventional Commits, на русском или английском, в теле — `Closes #<issue>`.
 - Комментарии в коде по необходимости; не оставлять закомментированный код и отладочный вывод.
