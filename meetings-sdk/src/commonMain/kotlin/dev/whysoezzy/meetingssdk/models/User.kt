@@ -3,6 +3,13 @@ package dev.whysoezzy.meetingssdk.models
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Short representation of a user, typically used in lists and previews.
+ *
+ * @property id Unique identifier of the user.
+ * @property firstName First name of the user.
+ * @property avatarUrl Optional URL to the user's avatar image.
+ */
 @Serializable
 data class UserShort(
     val id: String,
@@ -10,6 +17,23 @@ data class UserShort(
     @SerialName("avatarUrl") val avatarUrl: String? = null
 )
 
+/**
+ * Full user profile with detailed information.
+ *
+ * @property id Unique identifier of the user.
+ * @property firstName First name of the user.
+ * @property phone Optional phone number.
+ * @property city Optional city of residence.
+ * @property bio Optional short biography.
+ * @property avatarUrl Optional URL to the user's avatar image.
+ * @property interests List of interests associated with the user.
+ * @property socialLinks List of social media links.
+ * @property showCommunities Whether to show communities on the profile.
+ * @property showEvents Whether to show events on the profile.
+ * @property notificationsEnabled Whether push notifications are enabled.
+ * @property events Optional list of events the user is associated with.
+ * @property communities Optional list of communities the user belongs to.
+ */
 @Serializable
 data class UserProfile(
     val id: String,
@@ -27,7 +51,12 @@ data class UserProfile(
     val communities: List<CommunityShort>? = null
 )
 
-
+/**
+ * A social media link associated with a user profile.
+ *
+ * @property platform Name of the social platform (e.g., "telegram", "instagram").
+ * @property username Username or handle on that platform.
+ */
 @Serializable
 data class SocialLink(
     val platform: String,
