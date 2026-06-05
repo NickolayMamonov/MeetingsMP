@@ -8,7 +8,8 @@ import androidx.compose.ui.graphics.Color
  * Design tokens for colors used across the Meetings app.
  *
  * These tokens provide semantic color mappings on top of the core
- * [dev.whysoezzy.meetings.compose.models.UIKitColorScheme] values.
+ * [dev.whysoezzy.meetings.compose.tokens.ColorTokens] values from the existing
+ * [uikit.colorscheme][uikit.ColorScheme].
  */
 object ColorTokens {
 
