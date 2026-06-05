@@ -69,5 +69,15 @@ data class UpdateUserBody(
 @Serializable
 data class DeviceTokenBody(
     val token: String,
-    val platform: String
+    val platform: String,
+)
+
+/**
+ * Request body for refreshing an authentication token.
+ *
+ * @property token The current refresh token to exchange for a new access token.
+ */
+@Serializable
+data class RefreshTokenBody(
+    val token: String,
 )
