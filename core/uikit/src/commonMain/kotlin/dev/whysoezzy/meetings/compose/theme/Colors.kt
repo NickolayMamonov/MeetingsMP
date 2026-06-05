@@ -1,4 +1,6 @@
-package uikit
+@file:Suppress("MagicNumber")
+
+package dev.whysoezzy.meetings.compose.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -46,7 +48,7 @@ internal fun lightColorScheme(): ColorScheme = ColorScheme(
     outline = Color(0xFF7A7289),
     outlineVariant = Color(0xFFCBC2DB),
     scrim = Color(0xFF000000),
-    // Кастомные цвета для событий
+    // Custom colors for events
     eventOnline = Color(0xFF1DC0A6),
     eventOffline = Color(0xFF5A6A8E),
     eventFinished = Color(0xFFCCCCCC),
@@ -91,7 +93,7 @@ internal fun darkColorScheme(): ColorScheme = ColorScheme(
     outline = Color(0xFF7A7289),
     outlineVariant = Color(0xFF4A4458),
     scrim = Color(0xFF000000),
-    // Кастомные цвета для событий
+    // Custom colors for events
     eventOnline = Color(0xFF1DC0A6),
     eventOffline = Color(0xFF8B9BB4),
     eventFinished = Color(0xFF5C5C5C),
@@ -137,7 +139,7 @@ data class ColorScheme(
     val outline: Color,
     val outlineVariant: Color,
     val scrim: Color,
-    // Кастомные — специфичные для Meetings
+    // Custom — specific to Meetings
     val eventOnline: Color,
     val eventOffline: Color,
     val eventFinished: Color,
