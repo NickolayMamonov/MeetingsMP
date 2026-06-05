@@ -26,6 +26,15 @@ fun CommunityInfo.toUIKit(): UIKitCommunityInfo = UIKitCommunityInfo(
     isSubscribed = isSubscribed,
 )
 
+fun Community.toUIKitInfo(): UIKitCommunityInfo = UIKitCommunityInfo(
+    id = id,
+    name = name,
+    description = description,
+    imageUrl = imageUrl,
+    subscribersCount = subscribersCount,
+    isSubscribed = isSubscribed,
+)
+
 fun Tag.toUIKit(): UIKitTag = UIKitTag(
     id = id,
     name = name,
