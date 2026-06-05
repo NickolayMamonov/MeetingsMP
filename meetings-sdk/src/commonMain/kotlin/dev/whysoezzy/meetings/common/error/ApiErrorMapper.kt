@@ -2,6 +2,11 @@ package dev.whysoezzy.meetings.common.error
 
 import dev.whysoezzy.meetingssdk.ApiException
 
+private const val HTTP_CLIENT_ERROR_START = 400
+private const val HTTP_CLIENT_ERROR_END = 499
+private const val HTTP_SERVER_ERROR_START = 500
+private const val HTTP_SERVER_ERROR_END = 599
+
 /**
  * Maps an [ApiException] to a user-friendly [ErrorType].
  *
@@ -12,8 +17,8 @@ fun ApiException.toErrorType(): ErrorType {
     return when (this) {
         is ApiException.Http -> {
             when (statusCode) {
-                in 400..499 -> ErrorType.Unauthorized
-                in 500..599 -> ErrorType.Server
+                in HTTP_CLIENT_ERROR_START..HTTP_CLIENT_ERROR_END -> ErrorType.Unauthorized
+                in HTTP_SERVER_ERROR_START..HTTP_SERVER_ERROR_END -> ErrorType.Server
                 else -> ErrorType.Unknown
             }
         }
