@@ -13,6 +13,14 @@ kotlin {
             api(libs.compose.ui)
             api(project(":meetings-sdk"))
         }
+
+        @Suppress("unused")
+        val desktopTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlin.test.junit)
+            }
+        }
     }
 }
 
