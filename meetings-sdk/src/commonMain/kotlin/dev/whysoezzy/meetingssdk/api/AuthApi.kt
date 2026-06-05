@@ -3,12 +3,16 @@ package dev.whysoezzy.meetingssdk.api
 import de.jensklingenberg.ktorfit.http.Body
 import de.jensklingenberg.ktorfit.http.POST
 import dev.whysoezzy.meetingssdk.models.AuthResponse
+import dev.whysoezzy.meetingssdk.models.RefreshTokenBody
 import dev.whysoezzy.meetingssdk.models.RequestCodeBody
 import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
 import dev.whysoezzy.meetingssdk.models.VerifyCodeBody
 
 /**
  * Ktorfit API interface for authentication endpoints.
+ *
+ * Provides methods for phone-based authentication flow:
+ * request code → verify code → refresh token → logout.
  */
 interface AuthApi {
 
@@ -29,6 +33,18 @@ interface AuthApi {
      */
     @POST("auth/verify-code")
     suspend fun verifyCode(@Body body: VerifyCodeBody): AuthResponse
+
+    /**
+     * Refresh the current authentication token.
+     *
+     * Call this when the access token has expired to obtain a new one
+     * without requiring the user to re-authenticate.
+     *
+     * @param body Contains the current refresh token.
+     * @return [AuthResponse] with the new authentication token and user profile.
+     */
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Body body: RefreshTokenBody): AuthResponse
 
     /**
      * Log out the current user by invalidating the session on the server.
