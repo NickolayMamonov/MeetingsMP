@@ -1,160 +1,137 @@
 package dev.whysoezzy.meetings.compose.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dev.whysoezzy.meetings.compose.mapper.toUIKit
-import dev.whysoezzy.meetings.compose.models.UIKitAdBlock
-import dev.whysoezzy.meetings.compose.models.UIKitCommunity
-import dev.whysoezzy.meetings.compose.models.UIKitMainScreenData
-import dev.whysoezzy.meetings.compose.models.UIKitMeeting
-import dev.whysoezzy.meetings.compose.models.UIKitPerson
-import dev.whysoezzy.meetings.compose.models.UIKitTag
-import dev.whysoezzy.meetings.domain.usecase.GetAllTagsUseCase
+import dev.whysoezzy.meetings.common.error.ErrorType
+import dev.whysoezzy.meetings.common.error.toErrorType
+import dev.whysoezzy.meetings.compose.ui.meetings.MainScreenEvent
+import dev.whysoezzy.meetings.compose.ui.meetings.MainScreenUiState
+import dev.whysoezzy.meetings.compose.ui.meetings.MeetingsNavEvent
+import dev.whysoezzy.meetings.domain.usecase.GetAllMeetingsUseCase
 import dev.whysoezzy.meetings.domain.usecase.GetMainScreenDataUseCase
+import dev.whysoezzy.meetingssdk.ApiException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/**
- * UI state for MainScreen.
- */
-data class MainScreenUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val heroMeeting: UIKitMeeting? = null,
-    val nearestMeetings: List<UIKitMeeting> = emptyList(),
-    val recommendedCommunities: List<UIKitCommunity> = emptyList(),
-    val suggestedUsers: List<UIKitPerson> = emptyList(),
-    val adBlocks: List<UIKitAdBlock> = emptyList(),
-    val tags: List<UIKitTag> = emptyList(),
-    val selectedTagId: Long? = null,
-    val allMeetings: List<UIKitMeeting> = emptyList(),
-    val eventsNextCursor: String? = null,
-    val isRefreshing: Boolean = false,
-)
-
-/**
- * Events for MainScreenViewModel.
- */
-sealed interface MainScreenEvent {
-    data class TagSelected(val tagId: Long) : MainScreenEvent
-    data object Refresh : MainScreenEvent
-    data class LoadMore(val cursor: String) : MainScreenEvent
-}
-
-sealed interface MainScreenNavEvent {
-    data class MeetingDetails(val meetingId: Long) : MainScreenNavEvent
-    data class MeetingParticipants(val meetingId: Long) : MainScreenNavEvent
-    data class CommunityDetails(val communityId: Long) : MainScreenNavEvent
-}
 
 class MainScreenViewModel(
     private val getMainScreenDataUseCase: GetMainScreenDataUseCase,
-    private val getAllTagsUseCase: GetAllTagsUseCase,
+    private val getAllMeetingsUseCase: GetAllMeetingsUseCase,
 ) : ViewModel() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val _uiState = MutableStateFlow(MainScreenUiState())
     val uiState: StateFlow<MainScreenUiState> = _uiState.asStateFlow()
 
-    private val _navEvent = MutableSharedFlow<MainScreenNavEvent>()
-    val navEvent: SharedFlow<MainScreenNavEvent> = _navEvent.asSharedFlow()
-
-    init {
-        loadData()
-    }
+    private val _navEvent = MutableSharedFlow<MeetingsNavEvent>()
+    val navEvent: SharedFlow<MeetingsNavEvent> = _navEvent.asSharedFlow()
 
     fun onEvent(event: MainScreenEvent) {
         when (event) {
-            is MainScreenEvent.TagSelected -> filterByTag(event.tagId)
+            is MainScreenEvent.Load -> loadMainScreen()
             is MainScreenEvent.Refresh -> refresh()
+            is MainScreenEvent.SelectTag -> selectTag(event.tagId)
+            is MainScreenEvent.ClearError -> _uiState.update { it.copy(error = null) }
             is MainScreenEvent.LoadMore -> loadMore(event.cursor)
         }
     }
 
-    private fun loadData() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val mainScreenDataResult = getMainScreenDataUseCase()
-                val tagsResult = getAllTagsUseCase()
+    private fun loadMainScreen() {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-                mainScreenDataResult.onSuccess { data ->
-                    val uiData = data.toUIKit()
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        heroMeeting = uiData.heroMeeting,
-                        nearestMeetings = uiData.nearestMeetings,
-                        recommendedCommunities = uiData.recommendedCommunities,
-                        suggestedUsers = uiData.suggestedUsers,
-                        allMeetings = uiData.allMeetings,
-                        eventsNextCursor = uiData.eventsNextCursor,
-                    )
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load data",
-                    )
+            getMainScreenDataUseCase()
+                .onSuccess { data ->
+                    _uiState.update {
+                        it.copy(isLoading = false, data = data)
+                    }
                 }
-
-                tagsResult.onSuccess { tags ->
-                    _uiState.value = _uiState.value.copy(
-                        tags = tags.map { it.toUIKit() },
-                    )
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isLoading = false, error = errorType)
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Unknown error",
-                )
-            }
-        }
-    }
-
-    private fun filterByTag(tagId: Long) {
-        val newSelectedId = if (_uiState.value.selectedTagId == tagId) null else tagId
-        _uiState.value = _uiState.value.copy(selectedTagId = newSelectedId)
-
-        viewModelScope.launch {
-            try {
-                val tagsParam = newSelectedId?.toString()
-                val result = getMainScreenDataUseCase(tags = tagsParam)
-                result.onSuccess { data ->
-                    val uiData = data.toUIKit()
-                    _uiState.value = _uiState.value.copy(
-                        heroMeeting = uiData.heroMeeting,
-                        nearestMeetings = uiData.nearestMeetings,
-                        recommendedCommunities = uiData.recommendedCommunities,
-                        allMeetings = uiData.allMeetings,
-                    )
-                }
-            } catch (_: Exception) { }
         }
     }
 
     private fun refresh() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRefreshing = true)
-            loadData()
-            _uiState.value = _uiState.value.copy(isRefreshing = false)
+        scope.launch {
+            _uiState.update { it.copy(isRefreshing = true, error = null) }
+
+            getMainScreenDataUseCase()
+                .onSuccess { data ->
+                    _uiState.update {
+                        it.copy(isRefreshing = false, data = data)
+                    }
+                }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isRefreshing = false, error = errorType)
+                    }
+                }
+        }
+    }
+
+    private fun selectTag(tagId: Long) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            getAllMeetingsUseCase(tags = tagId.toString())
+                .onSuccess { meetings ->
+                    _uiState.update { state ->
+                        val currentData = state.data
+                        if (currentData != null) {
+                            state.copy(
+                                isLoading = false,
+                                data = currentData.copy(allMeetings = meetings),
+                            )
+                        } else {
+                            state.copy(isLoading = false)
+                        }
+                    }
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
+                }
         }
     }
 
     private fun loadMore(cursor: String) {
-        viewModelScope.launch {
-            try {
-                val result = getMainScreenDataUseCase(cursor = cursor)
-                result.onSuccess { data ->
-                    val uiData = data.toUIKit()
-                    _uiState.value = _uiState.value.copy(
-                        allMeetings = _uiState.value.allMeetings + uiData.allMeetings,
-                        eventsNextCursor = uiData.eventsNextCursor,
-                    )
+        scope.launch {
+            getMainScreenDataUseCase(cursor = cursor)
+                .onSuccess { data ->
+                    _uiState.update { state ->
+                        val currentData = state.data
+                        if (currentData != null) {
+                            state.copy(
+                                data = currentData.copy(
+                                    allMeetings = currentData.allMeetings + data.allMeetings,
+                                    eventsNextCursor = data.eventsNextCursor,
+                                ),
+                            )
+                        } else {
+                            state.copy(data = data)
+                        }
+                    }
                 }
-            } catch (_: Exception) { }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        scope.cancel()
     }
 }

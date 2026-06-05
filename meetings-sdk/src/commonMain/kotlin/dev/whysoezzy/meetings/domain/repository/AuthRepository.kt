@@ -47,4 +47,12 @@ interface AuthRepository {
      * @return `true` if a token is stored, `false` otherwise.
      */
     fun isLoggedIn(): Boolean
+
+    /**
+     * Observe the authentication state as a [kotlinx.coroutines.flow.Flow].
+     *
+     * Emits `true` when the user is authenticated and `false` when logged out.
+     * This allows the UI to reactively respond to auth state changes.
+     */
+    fun isLoggedInFlow(): kotlinx.coroutines.flow.Flow<Boolean>
 }

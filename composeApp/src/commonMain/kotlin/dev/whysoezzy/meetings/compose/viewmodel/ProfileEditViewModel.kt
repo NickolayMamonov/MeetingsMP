@@ -1,173 +1,141 @@
 package dev.whysoezzy.meetings.compose.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dev.whysoezzy.meetings.compose.mapper.toUIKit
-import dev.whysoezzy.meetings.compose.models.UIKitTag
-import dev.whysoezzy.meetings.domain.models.User
+import dev.whysoezzy.meetings.common.error.ErrorType
+import dev.whysoezzy.meetings.common.error.toErrorType
+import dev.whysoezzy.meetings.compose.ui.profile.ProfileEditEvent
+import dev.whysoezzy.meetings.compose.ui.profile.ProfileEditUiState
+import dev.whysoezzy.meetings.compose.ui.profile.ProfileNavEvent
 import dev.whysoezzy.meetings.domain.usecase.GetCurrentUserUseCase
+import dev.whysoezzy.meetings.domain.usecase.GetUserByIdUseCase
 import dev.whysoezzy.meetings.domain.usecase.UpdateUserProfileUseCase
-import dev.whysoezzy.meetings.domain.usecase.GetAllTagsUseCase
+import dev.whysoezzy.meetingssdk.ApiException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/**
- * UI state for ProfileEditScreen.
- */
-data class ProfileEditUiState(
-    val isLoading: Boolean = true,
-    val isSaving: Boolean = false,
-    val error: String? = null,
-    val name: String = "",
-    val surname: String = "",
-    val city: String = "",
-    val bio: String = "",
-    val avatar: String = "",
-    val showCommunities: Boolean = true,
-    val showMeetings: Boolean = true,
-    val notificationsEnabled: Boolean = true,
-    val availableTags: List<UIKitTag> = emptyList(),
-    val selectedTagIds: Set<Long> = emptySet(),
-)
-
-/**
- * Events for ProfileEditViewModel.
- */
-sealed interface ProfileEditEvent {
-    data class NameChanged(val name: String) : ProfileEditEvent
-    data class SurnameChanged(val surname: String) : ProfileEditEvent
-    data class CityChanged(val city: String) : ProfileEditEvent
-    data class BioChanged(val bio: String) : ProfileEditEvent
-    data class ShowCommunitiesToggled(val show: Boolean) : ProfileEditEvent
-    data class ShowMeetingsToggled(val show: Boolean) : ProfileEditEvent
-    data class NotificationsToggled(val enabled: Boolean) : ProfileEditEvent
-    data class TagToggled(val tagId: Long) : ProfileEditEvent
-    data object Save : ProfileEditEvent
-}
-
-sealed interface ProfileEditNavEvent {
-    data object NavigateBack : ProfileEditNavEvent
-}
 
 class ProfileEditViewModel(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val getUserByIdUseCase: GetUserByIdUseCase,
     private val updateUserProfileUseCase: UpdateUserProfileUseCase,
-    private val getAllTagsUseCase: GetAllTagsUseCase,
 ) : ViewModel() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val _uiState = MutableStateFlow(ProfileEditUiState())
     val uiState: StateFlow<ProfileEditUiState> = _uiState.asStateFlow()
 
-    private val _navEvent = MutableSharedFlow<ProfileEditNavEvent>()
-    val navEvent: SharedFlow<ProfileEditNavEvent> = _navEvent.asSharedFlow()
-
-    init {
-        loadProfile()
-    }
+    private val _navEvent = MutableSharedFlow<ProfileNavEvent>()
+    val navEvent: SharedFlow<ProfileNavEvent> = _navEvent.asSharedFlow()
 
     fun onEvent(event: ProfileEditEvent) {
         when (event) {
-            is ProfileEditEvent.NameChanged ->
-                _uiState.value = _uiState.value.copy(name = event.name)
-            is ProfileEditEvent.SurnameChanged ->
-                _uiState.value = _uiState.value.copy(surname = event.surname)
-            is ProfileEditEvent.CityChanged ->
-                _uiState.value = _uiState.value.copy(city = event.city)
-            is ProfileEditEvent.BioChanged ->
-                _uiState.value = _uiState.value.copy(bio = event.bio)
-            is ProfileEditEvent.ShowCommunitiesToggled ->
-                _uiState.value = _uiState.value.copy(showCommunities = event.show)
-            is ProfileEditEvent.ShowMeetingsToggled ->
-                _uiState.value = _uiState.value.copy(showMeetings = event.show)
-            is ProfileEditEvent.NotificationsToggled ->
-                _uiState.value = _uiState.value.copy(notificationsEnabled = event.enabled)
-            is ProfileEditEvent.TagToggled -> {
-                val current = _uiState.value.selectedTagIds
-                val updated = if (event.tagId in current) current - event.tagId else current + event.tagId
-                _uiState.value = _uiState.value.copy(selectedTagIds = updated)
+            is ProfileEditEvent.Load -> loadProfile(event.userId)
+            is ProfileEditEvent.NameChanged -> {
+                _uiState.update { it.copy(editedName = event.name, isSaved = false) }
             }
-            is ProfileEditEvent.Save -> save()
+            is ProfileEditEvent.SurnameChanged -> {
+                _uiState.update { it.copy(editedSurname = event.surname, isSaved = false) }
+            }
+            is ProfileEditEvent.BioChanged -> {
+                _uiState.update { it.copy(editedBio = event.bio, isSaved = false) }
+            }
+            is ProfileEditEvent.CityChanged -> {
+                _uiState.update { it.copy(editedCity = event.city, isSaved = false) }
+            }
+            is ProfileEditEvent.InterestToggled -> toggleInterest(event.interestId)
+            is ProfileEditEvent.Save -> saveProfile()
+            is ProfileEditEvent.ClearError -> _uiState.update { it.copy(error = null) }
         }
     }
 
-    private fun loadProfile() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val userResult = getCurrentUserUseCase()
-                val tagsResult = getAllTagsUseCase()
+    private fun loadProfile(userId: String?) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-                userResult.onSuccess { user ->
-                    _uiState.value = _uiState.value.copy(
-                        name = user.name,
-                        surname = user.surname,
-                        city = user.city,
-                        bio = user.bio,
-                        avatar = user.avatar,
-                        showCommunities = user.showCommunities,
-                        showMeetings = user.showMeetings,
-                        notificationsEnabled = user.notificationsEnabled,
-                        selectedTagIds = user.interests.map { it.id }.toSet(),
+            val user = if (userId != null) {
+                getUserByIdUseCase(userId).getOrNull()
+            } else {
+                getCurrentUserUseCase().getOrNull()
+            }
+
+            if (user != null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        user = user,
+                        editedName = user.name,
+                        editedSurname = user.surname,
+                        editedBio = user.bio,
+                        editedCity = user.city,
+                        selectedInterestIds = user.interests.map { tag -> tag.id },
                     )
                 }
-
-                tagsResult.onSuccess { tags ->
-                    _uiState.value = _uiState.value.copy(
-                        availableTags = tags.map { it.toUIKit() },
-                    )
+            } else {
+                _uiState.update {
+                    it.copy(isLoading = false, error = ErrorType.Unknown)
                 }
-
-                _uiState.value = _uiState.value.copy(isLoading = false)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Unknown error",
-                )
             }
         }
     }
 
-    private fun save() {
+    private fun toggleInterest(interestId: Long) {
+        _uiState.update { state ->
+            val current = state.selectedInterestIds.toMutableList()
+            if (current.contains(interestId)) {
+                current.remove(interestId)
+            } else {
+                current.add(interestId)
+            }
+            state.copy(selectedInterestIds = current, isSaved = false)
+        }
+    }
+
+    private fun saveProfile() {
         val state = _uiState.value
-        viewModelScope.launch {
-            _uiState.value = state.copy(isSaving = true, error = null)
-            try {
-                val updatedUser = User(
-                    id = 0L,
-                    name = state.name,
-                    surname = state.surname,
-                    email = "",
-                    city = state.city,
-                    avatar = state.avatar,
-                    phone = "",
-                    bio = state.bio,
-                    showCommunities = state.showCommunities,
-                    showMeetings = state.showMeetings,
-                    notificationsEnabled = state.notificationsEnabled,
-                )
-                val result = updateUserProfileUseCase(
-                    user = updatedUser,
-                    interestIds = state.selectedTagIds.toList(),
-                )
-                result.onSuccess {
-                    _navEvent.emit(ProfileEditNavEvent.NavigateBack)
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isSaving = false,
-                        error = e.message ?: "Failed to save profile",
-                    )
+        val currentUser = state.user ?: return
+
+        scope.launch {
+            _uiState.update { it.copy(isSaving = true, error = null) }
+
+            val updatedUser = currentUser.copy(
+                name = state.editedName,
+                surname = state.editedSurname,
+                bio = state.editedBio,
+                city = state.editedCity,
+            )
+
+            updateUserProfileUseCase(
+                user = updatedUser,
+                interestIds = state.selectedInterestIds,
+            )
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(isSaving = false, isSaved = true)
+                    }
+                    _navEvent.emit(ProfileNavEvent.NavigateBack)
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    error = e.message ?: "Unknown error",
-                )
-            }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isSaving = false, error = errorType)
+                    }
+                }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        scope.cancel()
     }
 }

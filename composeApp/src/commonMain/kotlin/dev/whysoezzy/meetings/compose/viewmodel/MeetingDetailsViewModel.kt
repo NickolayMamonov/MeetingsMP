@@ -1,133 +1,118 @@
 package dev.whysoezzy.meetings.compose.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dev.whysoezzy.meetings.compose.mapper.toUIKit
-import dev.whysoezzy.meetings.compose.models.UIKitMeeting
+import dev.whysoezzy.meetings.common.error.ErrorType
+import dev.whysoezzy.meetings.common.error.toErrorType
+import dev.whysoezzy.meetings.compose.ui.meetings.MeetingDetailsEvent
+import dev.whysoezzy.meetings.compose.ui.meetings.MeetingDetailsUiState
+import dev.whysoezzy.meetings.compose.ui.meetings.MeetingsNavEvent
 import dev.whysoezzy.meetings.domain.usecase.GetMeetingByIdUseCase
 import dev.whysoezzy.meetings.domain.usecase.JoinMeetingUseCase
 import dev.whysoezzy.meetings.domain.usecase.LeaveMeetingUseCase
+import dev.whysoezzy.meetingssdk.ApiException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * UI state for MeetingDetailsScreen.
- */
-data class MeetingDetailsUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val meeting: UIKitMeeting? = null,
-    val isJoining: Boolean = false,
-)
-
-/**
- * Events for MeetingDetailsViewModel.
- */
-sealed interface MeetingDetailsEvent {
-    data object JoinMeeting : MeetingDetailsEvent
-    data object LeaveMeeting : MeetingDetailsEvent
-}
-
-sealed interface MeetingDetailsNavEvent {
-    data class Participants(val meetingId: Long) : MeetingDetailsNavEvent
-    data object NavigateBack : MeetingDetailsNavEvent
-}
-
 class MeetingDetailsViewModel(
-    private val meetingId: String,
     private val getMeetingByIdUseCase: GetMeetingByIdUseCase,
     private val joinMeetingUseCase: JoinMeetingUseCase,
     private val leaveMeetingUseCase: LeaveMeetingUseCase,
 ) : ViewModel() {
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     private val _uiState = MutableStateFlow(MeetingDetailsUiState())
     val uiState: StateFlow<MeetingDetailsUiState> = _uiState.asStateFlow()
 
-    private val _navEvent = MutableSharedFlow<MeetingDetailsNavEvent>()
-    val navEvent: SharedFlow<MeetingDetailsNavEvent> = _navEvent.asSharedFlow()
+    private val _navEvent = MutableSharedFlow<MeetingsNavEvent>()
+    val navEvent: SharedFlow<MeetingsNavEvent> = _navEvent.asSharedFlow()
 
-    init {
-        loadMeeting()
-    }
+    private var currentMeetingId: String = ""
 
     fun onEvent(event: MeetingDetailsEvent) {
         when (event) {
-            is MeetingDetailsEvent.JoinMeeting -> join()
-            is MeetingDetailsEvent.LeaveMeeting -> leave()
+            is MeetingDetailsEvent.Load -> loadMeeting(event.meetingId)
+            is MeetingDetailsEvent.Join -> join()
+            is MeetingDetailsEvent.Leave -> leave()
+            is MeetingDetailsEvent.ClearError -> _uiState.update { it.copy(error = null) }
         }
     }
 
-    private fun loadMeeting() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val result = getMeetingByIdUseCase(meetingId)
-                result.onSuccess { meeting ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        meeting = meeting.toUIKit(),
-                    )
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load meeting",
-                    )
+    private fun loadMeeting(meetingId: String) {
+        currentMeetingId = meetingId
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            getMeetingByIdUseCase(meetingId)
+                .onSuccess { meeting ->
+                    _uiState.update {
+                        it.copy(isLoading = false, meeting = meeting)
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Unknown error",
-                )
-            }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isLoading = false, error = errorType)
+                    }
+                }
         }
     }
 
     private fun join() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isJoining = true)
-            try {
-                val result = joinMeetingUseCase(meetingId)
-                result.onSuccess {
-                    loadMeeting()
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isJoining = false,
-                        error = e.message ?: "Failed to join meeting",
-                    )
+        scope.launch {
+            _uiState.update { it.copy(isJoining = true, error = null) }
+
+            joinMeetingUseCase(currentMeetingId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val updatedMeeting = state.meeting?.copy(isUserInParticipants = true)
+                        state.copy(isJoining = false, meeting = updatedMeeting)
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isJoining = false,
-                    error = e.message ?: "Unknown error",
-                )
-            }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isJoining = false, error = errorType)
+                    }
+                }
         }
     }
 
     private fun leave() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isJoining = true)
-            try {
-                val result = leaveMeetingUseCase(meetingId)
-                result.onSuccess {
-                    loadMeeting()
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isJoining = false,
-                        error = e.message ?: "Failed to leave meeting",
-                    )
+        scope.launch {
+            _uiState.update { it.copy(isLeaving = true, error = null) }
+
+            leaveMeetingUseCase(currentMeetingId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val updatedMeeting = state.meeting?.copy(isUserInParticipants = false)
+                        state.copy(isLeaving = false, meeting = updatedMeeting)
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isJoining = false,
-                    error = e.message ?: "Unknown error",
-                )
-            }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isLeaving = false, error = errorType)
+                    }
+                }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        scope.cancel()
     }
 }

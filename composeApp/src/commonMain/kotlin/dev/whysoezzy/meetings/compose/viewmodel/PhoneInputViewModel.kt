@@ -1,22 +1,31 @@
 package dev.whysoezzy.meetings.compose.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import dev.whysoezzy.meetings.common.error.ErrorType
+import dev.whysoezzy.meetings.common.error.toErrorType
 import dev.whysoezzy.meetings.compose.ui.auth.AuthNavEvent
 import dev.whysoezzy.meetings.compose.ui.auth.PhoneInputEvent
 import dev.whysoezzy.meetings.compose.ui.auth.PhoneInputUiState
 import dev.whysoezzy.meetings.domain.usecase.SendOtpUseCase
+import dev.whysoezzy.meetingssdk.ApiException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class PhoneInputViewModel(
     private val sendOtpUseCase: SendOtpUseCase,
 ) : ViewModel() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val _uiState = MutableStateFlow(PhoneInputUiState())
     val uiState: StateFlow<PhoneInputUiState> = _uiState.asStateFlow()
@@ -27,30 +36,48 @@ class PhoneInputViewModel(
     fun onEvent(event: PhoneInputEvent) {
         when (event) {
             is PhoneInputEvent.PhoneChanged -> {
-                _uiState.value = _uiState.value.copy(phone = event.phone)
+                _uiState.update { it.copy(phone = event.phone) }
             }
             is PhoneInputEvent.FirstNameChanged -> {
-                _uiState.value = _uiState.value.copy(firstName = event.firstName)
+                _uiState.update { it.copy(firstName = event.firstName) }
             }
-            is PhoneInputEvent.SendCode -> {
-                sendCode()
+            is PhoneInputEvent.SendCode -> sendCode()
+            is PhoneInputEvent.ClearError -> {
+                _uiState.update { it.copy(error = null) }
             }
         }
     }
 
     private fun sendCode() {
         val state = _uiState.value
-        viewModelScope.launch {
-            _uiState.value = state.copy(isLoading = true, error = null)
-            try {
-                sendOtpUseCase(state.phone, state.firstName)
-                _navEvent.emit(AuthNavEvent.NavigateToCodeVerification)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Unknown error",
-                )
-            }
+        if (state.phone.isBlank() || state.firstName.isBlank()) return
+
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            sendOtpUseCase(state.phone, state.firstName)
+                .onSuccess { response ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            codeSent = true,
+                            retryAfterSeconds = response.retryAfterSeconds,
+                        )
+                    }
+                    _navEvent.emit(AuthNavEvent.NavigateToCodeVerification)
+                }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isLoading = false, error = errorType)
+                    }
+                }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        scope.cancel()
     }
 }

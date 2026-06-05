@@ -1,127 +1,133 @@
 package dev.whysoezzy.meetings.compose.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dev.whysoezzy.meetings.compose.mapper.toUIKit
-import dev.whysoezzy.meetings.compose.mapper.toUIKitInfo
-import dev.whysoezzy.meetings.compose.models.UIKitCommunity
-import dev.whysoezzy.meetings.compose.models.UIKitMeetingInfo
+import dev.whysoezzy.meetings.common.error.ErrorType
+import dev.whysoezzy.meetings.common.error.toErrorType
+import dev.whysoezzy.meetings.compose.ui.communities.CommunitiesNavEvent
+import dev.whysoezzy.meetings.compose.ui.communities.CommunityDetailsEvent
+import dev.whysoezzy.meetings.compose.ui.communities.CommunityDetailsUiState
 import dev.whysoezzy.meetings.domain.usecase.GetCommunityByIdUseCase
 import dev.whysoezzy.meetings.domain.usecase.GetCommunityMeetingsUseCase
 import dev.whysoezzy.meetings.domain.usecase.SubscribeToCommunityUseCase
 import dev.whysoezzy.meetings.domain.usecase.UnsubscribeFromCommunityUseCase
+import dev.whysoezzy.meetingssdk.ApiException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * UI state for CommunityDetailsScreen.
- */
-data class CommunityDetailsUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val community: UIKitCommunity? = null,
-    val meetings: List<UIKitMeetingInfo> = emptyList(),
-    val isSubscribing: Boolean = false,
-)
-
-/**
- * Events for CommunityDetailsViewModel.
- */
-sealed interface CommunityDetailsEvent {
-    data object ToggleSubscription : CommunityDetailsEvent
-}
-
-sealed interface CommunityDetailsNavEvent {
-    data class Subscribers(val communityId: Long) : CommunityDetailsNavEvent
-    data object NavigateBack : CommunityDetailsNavEvent
-}
-
 class CommunityDetailsViewModel(
-    private val communityId: Long,
     private val getCommunityByIdUseCase: GetCommunityByIdUseCase,
     private val getCommunityMeetingsUseCase: GetCommunityMeetingsUseCase,
     private val subscribeToCommunityUseCase: SubscribeToCommunityUseCase,
     private val unsubscribeFromCommunityUseCase: UnsubscribeFromCommunityUseCase,
 ) : ViewModel() {
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     private val _uiState = MutableStateFlow(CommunityDetailsUiState())
     val uiState: StateFlow<CommunityDetailsUiState> = _uiState.asStateFlow()
 
-    private val _navEvent = MutableSharedFlow<CommunityDetailsNavEvent>()
-    val navEvent: SharedFlow<CommunityDetailsNavEvent> = _navEvent.asSharedFlow()
+    private val _navEvent = MutableSharedFlow<CommunitiesNavEvent>()
+    val navEvent: SharedFlow<CommunitiesNavEvent> = _navEvent.asSharedFlow()
 
-    init {
-        loadCommunity()
-    }
+    private var currentCommunityId: Long = 0L
 
     fun onEvent(event: CommunityDetailsEvent) {
         when (event) {
-            is CommunityDetailsEvent.ToggleSubscription -> toggleSubscription()
+            is CommunityDetailsEvent.Load -> loadCommunity(event.communityId)
+            is CommunityDetailsEvent.Subscribe -> subscribe()
+            is CommunityDetailsEvent.Unsubscribe -> unsubscribe()
+            is CommunityDetailsEvent.ClearError -> _uiState.update { it.copy(error = null) }
         }
     }
 
-    private fun loadCommunity() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val communityResult = getCommunityByIdUseCase(communityId)
-                val meetingsResult = getCommunityMeetingsUseCase(communityId)
+    private fun loadCommunity(communityId: Long) {
+        currentCommunityId = communityId
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-                communityResult.onSuccess { community ->
-                    _uiState.value = _uiState.value.copy(
-                        community = community.toUIKit(),
-                    )
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load community",
-                    )
-                }
+            val communityResult = getCommunityByIdUseCase(communityId)
+            val meetingsResult = getCommunityMeetingsUseCase(communityId)
 
-                meetingsResult.onSuccess { meetings ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        meetings = meetings.map { it.toUIKitInfo() },
-                    )
+            val community = communityResult.getOrNull()
+            val meetings = meetingsResult.getOrNull() ?: emptyList()
+
+            if (community != null) {
+                _uiState.update {
+                    it.copy(isLoading = false, community = community, meetings = meetings)
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Unknown error",
-                )
+            } else {
+                val error = communityResult.exceptionOrNull()
+                val errorType = (error as? ApiException)
+                    ?.toErrorType() ?: ErrorType.Unknown
+                _uiState.update {
+                    it.copy(isLoading = false, error = errorType)
+                }
             }
         }
     }
 
-    private fun toggleSubscription() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSubscribing = true)
-            val currentCommunity = _uiState.value.community ?: return@launch
-            try {
-                val result = if (currentCommunity.isSubscribed) {
-                    unsubscribeFromCommunityUseCase(communityId)
-                } else {
-                    subscribeToCommunityUseCase(communityId)
+    private fun subscribe() {
+        scope.launch {
+            _uiState.update { it.copy(isSubscribing = true, error = null) }
+
+            subscribeToCommunityUseCase(currentCommunityId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val community = state.community ?: return@update state
+                        val updatedCommunity = community.copy(
+                            isSubscribed = true,
+                            subscribersCount = community.subscribersCount + 1,
+                        )
+                        state.copy(isSubscribing = false, community = updatedCommunity)
+                    }
                 }
-                result.onSuccess {
-                    loadCommunity()
-                }.onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isSubscribing = false,
-                        error = e.message,
-                    )
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isSubscribing = false, error = errorType)
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSubscribing = false,
-                    error = e.message,
-                )
-            }
         }
+    }
+
+    private fun unsubscribe() {
+        scope.launch {
+            _uiState.update { it.copy(isSubscribing = true, error = null) }
+
+            unsubscribeFromCommunityUseCase(currentCommunityId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        val community = state.community ?: return@update state
+                        val updatedCommunity = community.copy(
+                            isSubscribed = false,
+                            subscribersCount = (community.subscribersCount - 1).coerceAtLeast(0),
+                        )
+                        state.copy(isSubscribing = false, community = updatedCommunity)
+                    }
+                }
+                .onFailure { throwable ->
+                    val errorType = (throwable as? ApiException)
+                        ?.toErrorType() ?: ErrorType.Unknown
+                    _uiState.update {
+                        it.copy(isSubscribing = false, error = errorType)
+                    }
+                }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        scope.cancel()
     }
 }
