@@ -1,4 +1,4 @@
-package uikit
+package dev.whysoezzy.meetings.compose.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

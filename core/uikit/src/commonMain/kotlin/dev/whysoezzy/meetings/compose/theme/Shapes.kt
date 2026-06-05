@@ -1,4 +1,4 @@
-package uikit
+package dev.whysoezzy.meetings.compose.theme
 
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,12 +11,12 @@ internal val LocalShapes = staticCompositionLocalOf { shapes() }
 
 internal fun shapes(): Shapes = Shapes(
     none = RoundedCornerShape(0.dp),
-    extraSmall = RoundedCornerShape(6.dp),   // чипы/теги
-    small = RoundedCornerShape(8.dp),        // инпуты
-    medium = RoundedCornerShape(12.dp),      // карточки
-    large = RoundedCornerShape(16.dp),       // bottom sheets
-    extraLarge = RoundedCornerShape(28.dp),  // большие карточки
-    full = RoundedCornerShape(percent = 50)  // кнопки pill-shape
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+    full = RoundedCornerShape(percent = 50),
 )
 
 @Immutable
