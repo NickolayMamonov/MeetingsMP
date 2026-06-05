@@ -3,6 +3,7 @@ package dev.whysoezzy.meetingssdk
 import dev.whysoezzy.meetingssdk.auth.AuthToken
 import dev.whysoezzy.meetingssdk.auth.InMemoryTokenProvider
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue

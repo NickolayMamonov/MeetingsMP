@@ -1,5 +1,6 @@
 package dev.whysoezzy.meetingssdk
 
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -8,7 +9,7 @@ import kotlin.test.assertTrue
 class SafeApiCallTest {
 
     @Test
-    fun safeApiCall_returnsSuccessOnSuccessfulCall() = kotlinx.coroutines.test.runTest {
+    fun safeApiCall_returnsSuccessOnSuccessfulCall() = runBlocking {
         val result = safeApiCall { "hello" }
 
         assertTrue(result.isSuccess)
@@ -16,7 +17,7 @@ class SafeApiCallTest {
     }
 
     @Test
-    fun safeApiCall_returnsSuccessWithNullValue() = kotlinx.coroutines.test.runTest {
+    fun safeApiCall_returnsSuccessWithNullValue() = runBlocking {
         val result = safeApiCall<String?> { null }
 
         assertTrue(result.isSuccess)
@@ -24,7 +25,7 @@ class SafeApiCallTest {
     }
 
     @Test
-    fun safeApiCall_wrapsIOException_asNetworkException() = kotlinx.coroutines.test.runTest {
+    fun safeApiCall_wrapsIOException_asNetworkException() = runBlocking {
         val ioException = io.ktor.utils.io.errors.IOException("No connection")
 
         val result = safeApiCall { throw ioException }
@@ -36,7 +37,7 @@ class SafeApiCallTest {
     }
 
     @Test
-    fun safeApiCall_wrapsSerializationException_asSerializationException() = kotlinx.coroutines.test.runTest {
+    fun safeApiCall_wrapsSerializationException_asSerializationException() = runBlocking {
         val serializationException = kotlinx.serialization.SerializationException("Bad JSON")
 
         val result = safeApiCall { throw serializationException }
@@ -48,7 +49,7 @@ class SafeApiCallTest {
     }
 
     @Test
-    fun safeApiCall_wrapsGenericException_asUnknownException() = kotlinx.coroutines.test.runTest {
+    fun safeApiCall_wrapsGenericException_asUnknownException() = runBlocking {
         val genericException = RuntimeException("Unexpected failure")
 
         val result = safeApiCall { throw genericException }
@@ -60,7 +61,7 @@ class SafeApiCallTest {
     }
 
     @Test
-    fun safeApiCall_passesThroughApiException() = kotlinx.coroutines.test.runTest {
+    fun safeApiCall_passesThroughApiException() = runBlocking {
         val apiException = ApiException.Http(statusCode = 403)
 
         val result = safeApiCall { throw apiException }
