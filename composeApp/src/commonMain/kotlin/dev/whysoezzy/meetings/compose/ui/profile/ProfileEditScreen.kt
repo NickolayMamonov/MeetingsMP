@@ -28,8 +28,7 @@ import dev.whysoezzy.meetings.compose.components.UIKitToggle
 import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
-import dev.whysoezzy.meetings.compose.viewmodel.ProfileEditEvent
-import dev.whysoezzy.meetings.compose.viewmodel.ProfileEditUiState
+import dev.whysoezzy.meetings.compose.ui.navigation.MeetRoute
 import dev.whysoezzy.meetings.compose.viewmodel.ProfileEditViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -48,8 +47,14 @@ fun ProfileEditScreen(
     LaunchedEffect(Unit) {
         viewModel.navEvent.collect { event ->
             when (event) {
-                is dev.whysoezzy.meetings.compose.viewmodel.ProfileEditNavEvent.NavigateBack -> {
+                is ProfileNavEvent.NavigateBack -> {
                     navController.popBackStack()
+                }
+                is ProfileNavEvent.NavigateToEditProfile -> {
+                    // Already on this screen
+                }
+                is ProfileNavEvent.NavigateToLogin -> {
+                    navController.navigateAndClear(MeetRoute.PhoneInput)
                 }
             }
         }
@@ -57,8 +62,7 @@ fun ProfileEditScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = modifier, 
-                modifier = Modifier.fillMaxSize(),
+            Box(modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = MeetingsTheme.colors.primary)
@@ -94,7 +98,7 @@ private fun ProfileEditContent(
         )
 
         UIKitInput(
-            value = uiState.name,
+            value = uiState.editedName,
             onValueChange = { onEvent(ProfileEditEvent.NameChanged(it)) },
             label = "Имя",
             placeholder = "Введите имя",
@@ -102,7 +106,7 @@ private fun ProfileEditContent(
         )
 
         UIKitInput(
-            value = uiState.surname,
+            value = uiState.editedSurname,
             onValueChange = { onEvent(ProfileEditEvent.SurnameChanged(it)) },
             label = "Фамилия",
             placeholder = "Введите фамилию",
@@ -110,7 +114,7 @@ private fun ProfileEditContent(
         )
 
         UIKitInput(
-            value = uiState.city,
+            value = uiState.editedCity,
             onValueChange = { onEvent(ProfileEditEvent.CityChanged(it)) },
             label = "Город",
             placeholder = "Введите город",
@@ -118,7 +122,7 @@ private fun ProfileEditContent(
         )
 
         UIKitInput(
-            value = uiState.bio,
+            value = uiState.editedBio,
             onValueChange = { onEvent(ProfileEditEvent.BioChanged(it)) },
             label = "О себе",
             placeholder = "Расскажите о себе",
@@ -126,7 +130,7 @@ private fun ProfileEditContent(
         )
 
         // Interests / Tags
-        if (uiState.availableTags.isNotEmpty()) {
+        if (uiState.allTags.isNotEmpty()) {
             Text(
                 text = "Интересы",
                 style = MeetingsTheme.typography.titleMedium,
@@ -136,12 +140,12 @@ private fun ProfileEditContent(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(SpacingTokens.small),
             ) {
-                uiState.availableTags.forEach { tag ->
-                    val isSelected = tag.id in uiState.selectedTagIds
+                uiState.allTags.forEach { tag ->
+                    val isSelected = tag.id in uiState.selectedInterestIds
                     UIKitTag(
                         text = tag.name,
                         state = if (isSelected) UIKitTagState.SELECTED else UIKitTagState.ACTIVE,
-                        onClick = { onEvent(ProfileEditEvent.TagToggled(tag.id)) },
+                        onClick = { onEvent(ProfileEditEvent.InterestToggled(tag.id)) },
                     )
                 }
             }
@@ -149,8 +153,8 @@ private fun ProfileEditContent(
 
         // Toggles
         UIKitToggle(
-            checked = uiState.showCommunities,
-            onCheckedChange = { onEvent(ProfileEditEvent.ShowCommunitiesToggled(it)) },
+            checked = uiState.user?.showCommunities ?: false,
+            onCheckedChange = { },
         )
         Text(
             text = "Показывать сообщества",
@@ -159,8 +163,8 @@ private fun ProfileEditContent(
         )
 
         UIKitToggle(
-            checked = uiState.showMeetings,
-            onCheckedChange = { onEvent(ProfileEditEvent.ShowMeetingsToggled(it)) },
+            checked = uiState.user?.showMeetings ?: false,
+            onCheckedChange = { },
         )
         Text(
             text = "Показывать встречи",
@@ -169,8 +173,8 @@ private fun ProfileEditContent(
         )
 
         UIKitToggle(
-            checked = uiState.notificationsEnabled,
-            onCheckedChange = { onEvent(ProfileEditEvent.NotificationsToggled(it)) },
+            checked = uiState.user?.notificationsEnabled ?: false,
+            onCheckedChange = { },
         )
         Text(
             text = "Уведомления",
@@ -180,7 +184,7 @@ private fun ProfileEditContent(
 
         if (uiState.error != null) {
             Text(
-                text = uiState.error ?: "Error",
+                text = uiState.error.toString(),
                 style = MeetingsTheme.typography.bodySmall,
                 color = MeetingsTheme.colors.error,
             )

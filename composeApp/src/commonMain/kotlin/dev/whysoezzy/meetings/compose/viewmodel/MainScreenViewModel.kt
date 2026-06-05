@@ -87,7 +87,7 @@ class MainScreenViewModel(
 
     private fun selectTag(tagId: Long) {
         scope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, selectedTagId = tagId) }
 
             getAllMeetingsUseCase(tags = tagId.toString())
                 .onSuccess { meetings ->

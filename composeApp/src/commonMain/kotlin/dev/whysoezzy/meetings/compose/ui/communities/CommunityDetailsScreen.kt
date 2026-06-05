@@ -20,14 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.whysoezzy.meetings.compose.components.UIKitCommunityBlock
 import dev.whysoezzy.meetings.compose.components.UIKitMeetingsList
+import dev.whysoezzy.meetings.compose.mapper.toUIKitInfo
+import dev.whysoezzy.meetings.compose.models.UIKitCommunity
 import dev.whysoezzy.meetings.compose.models.UIKitCommunityInfo
 import dev.whysoezzy.meetings.compose.models.UIKitMeetingInfo
 import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetRoute
-import dev.whysoezzy.meetings.compose.viewmodel.CommunityDetailsUiState
-import dev.whysoezzy.meetings.compose.viewmodel.CommunityDetailsEvent
 import dev.whysoezzy.meetings.compose.viewmodel.CommunityDetailsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -48,10 +48,13 @@ fun CommunityDetailsScreen(
     LaunchedEffect(Unit) {
         viewModel.navEvent.collect { event ->
             when (event) {
-                is dev.whysoezzy.meetings.compose.viewmodel.CommunityDetailsNavEvent.Subscribers -> {
+                is CommunitiesNavEvent.NavigateToCommunitySubscribers -> {
                     navController.navigate(MeetRoute.CommunitySubscribers(communityId = event.communityId))
                 }
-                is dev.whysoezzy.meetings.compose.viewmodel.CommunityDetailsNavEvent.NavigateBack -> {
+                is CommunitiesNavEvent.NavigateToCommunityDetails -> {
+                    navController.navigate(MeetRoute.CommunityDetails(communityId = event.communityId))
+                }
+                is CommunitiesNavEvent.NavigateBack -> {
                     navController.popBackStack()
                 }
             }
@@ -60,8 +63,7 @@ fun CommunityDetailsScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = modifier, 
-                modifier = Modifier.fillMaxSize(),
+            Box(modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = MeetingsTheme.colors.primary)
@@ -73,7 +75,7 @@ fun CommunityDetailsScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = uiState.error ?: "Error",
+                    text = uiState.error.toString(),
                     style = MeetingsTheme.typography.bodyLarge,
                     color = MeetingsTheme.colors.error,
                 )
@@ -107,8 +109,16 @@ private fun CommunityDetailsContent(
             .verticalScroll(rememberScrollState()),
     ) {
         UIKitCommunityBlock(
-            community = community,
-            onSubscribeClick = { onEvent(CommunityDetailsEvent.ToggleSubscription) },
+            community = UIKitCommunity(
+                id = community.id,
+                name = community.name,
+                description = community.description,
+                imageUrl = community.imageUrl,
+                subscribersCount = community.subscribersCount,
+                isSubscribed = community.isSubscribed,
+                tags = emptyList(),
+            ),
+            onSubscribeClick = { onEvent(CommunityDetailsEvent.Subscribe) },
         )
 
         Spacer(modifier = Modifier.height(SpacingTokens.medium))
@@ -125,7 +135,7 @@ private fun CommunityDetailsContent(
             Spacer(modifier = Modifier.height(SpacingTokens.small))
 
             UIKitMeetingsList(
-                meetings = uiState.meetings,
+                meetings = uiState.meetings.map { it.toUIKitInfo() },
                 onMeetingClick = {},
                 modifier = Modifier.padding(top = SpacingTokens.micro),
             )

@@ -34,37 +34,12 @@ val meetingsModule = module {
 
     // ── Meetings ViewModels ────────────────────────────────────
     viewModelOf(::MainScreenViewModel)
-    viewModel { params ->
-        MeetingDetailsViewModel(
-            meetingId = params.get(),
-            getMeetingByIdUseCase = get(),
-            joinMeetingUseCase = get(),
-            leaveMeetingUseCase = get(),
-        )
-    }
-    viewModel { params ->
-        MeetingParticipantsViewModel(
-            meetingId = params.get(),
-            getMeetingParticipantsUseCase = get(),
-        )
-    }
+    viewModelOf(::MeetingDetailsViewModel)
+    viewModelOf(::MeetingParticipantsViewModel)
 
     // ── Communities ViewModels ─────────────────────────────────
-    viewModel { params ->
-        CommunityDetailsViewModel(
-            communityId = params.get(),
-            getCommunityByIdUseCase = get(),
-            getCommunityMeetingsUseCase = get(),
-            subscribeToCommunityUseCase = get(),
-            unsubscribeFromCommunityUseCase = get(),
-        )
-    }
-    viewModel { params ->
-        CommunitySubscribersViewModel(
-            communityId = params.get(),
-            getCommunitySubscribersUseCase = get(),
-        )
-    }
+    viewModelOf(::CommunityDetailsViewModel)
+    viewModelOf(::CommunitySubscribersViewModel)
 
     // ── Profile ViewModels ─────────────────────────────────────
     viewModelOf(::ProfileDetailsViewModel)

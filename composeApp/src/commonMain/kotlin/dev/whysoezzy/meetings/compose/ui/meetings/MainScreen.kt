@@ -30,18 +30,14 @@ import androidx.compose.ui.unit.dp
 import dev.whysoezzy.meetings.compose.components.UIKitCommunityCard
 import dev.whysoezzy.meetings.compose.components.UIKitEventCard
 import dev.whysoezzy.meetings.compose.components.UIKitTag
+import dev.whysoezzy.meetings.compose.mapper.toUIKitInfo
 import dev.whysoezzy.meetings.compose.models.UIKitTagState
-import dev.whysoezzy.meetings.compose.models.UIKitCommunity
 import dev.whysoezzy.meetings.compose.models.UIKitCommunityInfo
-import dev.whysoezzy.meetings.compose.models.UIKitMeeting
 import dev.whysoezzy.meetings.compose.models.UIKitMeetingInfo
-import dev.whysoezzy.meetings.compose.models.UIKitTag as UIKitTagModel
 import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetRoute
-import dev.whysoezzy.meetings.compose.viewmodel.MainScreenUiState
-import dev.whysoezzy.meetings.compose.viewmodel.MainScreenEvent
 import dev.whysoezzy.meetings.compose.viewmodel.MainScreenViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -61,14 +57,17 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         viewModel.navEvent.collect { event ->
             when (event) {
-                is dev.whysoezzy.meetings.compose.viewmodel.MainScreenNavEvent.MeetingDetails -> {
-                    navController.navigate(MeetRoute.MeetingDetails(meetingId = event.meetingId.toString()))
+                is MeetingsNavEvent.NavigateToMeetingDetails -> {
+                    navController.navigate(MeetRoute.MeetingDetails(meetingId = event.meetingId))
                 }
-                is dev.whysoezzy.meetings.compose.viewmodel.MainScreenNavEvent.MeetingParticipants -> {
-                    navController.navigate(MeetRoute.MeetingParticipants(meetingId = event.meetingId.toString()))
+                is MeetingsNavEvent.NavigateToMeetingParticipants -> {
+                    navController.navigate(MeetRoute.MeetingParticipants(meetingId = event.meetingId))
                 }
-                is dev.whysoezzy.meetings.compose.viewmodel.MainScreenNavEvent.CommunityDetails -> {
-                    navController.navigate(MeetRoute.CommunityDetails(communityId = event.communityId))
+                is MeetingsNavEvent.NavigateToCreateMeeting -> {
+                    // TODO: Navigate to create meeting screen
+                }
+                is MeetingsNavEvent.NavigateBack -> {
+                    navController.popBackStack()
                 }
             }
         }
@@ -76,8 +75,7 @@ fun MainScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = modifier, 
-                modifier = Modifier.fillMaxSize(),
+            Box(modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = MeetingsTheme.colors.primary)
@@ -89,7 +87,7 @@ fun MainScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = uiState.error ?: "Error",
+                    text = uiState.error.toString(),
                     style = MeetingsTheme.typography.bodyLarge,
                     color = MeetingsTheme.colors.error,
                 )
@@ -118,6 +116,8 @@ private fun MainScreenContent(
     onMeetingClick: (Long) -> Unit,
     onCommunityClick: (Long) -> Unit,
 ) {
+    val data = uiState.data
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -126,25 +126,17 @@ private fun MainScreenContent(
         verticalArrangement = Arrangement.spacedBy(SpacingTokens.medium),
     ) {
         // Hero meeting
-        uiState.heroMeeting?.let { hero ->
+        data?.heroMeeting?.let { hero ->
             item(key = "hero") {
                 UIKitEventCard(
-                    meeting = UIKitMeetingInfo(
-                        id = hero.id,
-                        imageUrl = hero.imageUrl,
-                        title = hero.title,
-                        address = hero.address.address,
-                        tags = hero.tags,
-                        time = hero.time,
-                        meetingStatus = hero.meetingStatus,
-                    ),
+                    meeting = hero.toUIKitInfo(),
                     onClick = { onMeetingClick(hero.id) },
                 )
             }
         }
 
         // Nearest meetings
-        if (uiState.nearestMeetings.isNotEmpty()) {
+        if (data?.nearestMeetings?.isNotEmpty() == true) {
             item(key = "nearest_header") {
                 Text(
                     text = "Ближайшие встречи",
@@ -157,17 +149,9 @@ private fun MainScreenContent(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(SpacingTokens.small),
                 ) {
-                    items(uiState.nearestMeetings, key = { it.id }) { meeting ->
+                    items(data.nearestMeetings, key = { it.id }) { meeting ->
                         UIKitEventCard(
-                            meeting = UIKitMeetingInfo(
-                                id = meeting.id,
-                                imageUrl = meeting.imageUrl,
-                                title = meeting.title,
-                                address = meeting.address.address,
-                                tags = meeting.tags,
-                                time = meeting.time,
-                                meetingStatus = meeting.meetingStatus,
-                            ),
+                            meeting = meeting.toUIKitInfo(),
                             onClick = { onMeetingClick(meeting.id) },
                             modifier = Modifier.width(280.dp),
                         )
@@ -177,7 +161,7 @@ private fun MainScreenContent(
         }
 
         // Recommended communities
-        if (uiState.recommendedCommunities.isNotEmpty()) {
+        if (data?.recommendedCommunities?.isNotEmpty() == true) {
             item(key = "communities_header") {
                 Text(
                     text = "Рекомендуемые сообщества",
@@ -186,34 +170,27 @@ private fun MainScreenContent(
                 )
             }
 
-            items(uiState.recommendedCommunities, key = { "community_${it.id}" }) { community ->
+            items(data.recommendedCommunities, key = { "community_${it.id}" }) { community ->
                 UIKitCommunityCard(
-                    community = UIKitCommunityInfo(
-                        id = community.id,
-                        name = community.name,
-                        description = community.description,
-                        imageUrl = community.imageUrl,
-                        subscribersCount = community.subscribersCount,
-                        isSubscribed = community.isSubscribed,
-                    ),
+                    community = community.toUIKitInfo(),
                     onClick = { onCommunityClick(community.id) },
                 )
             }
         }
 
         // Tag filters
-        if (uiState.tags.isNotEmpty()) {
+        if (data?.tags?.isNotEmpty() == true) {
             item(key = "tag_filters") {
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(SpacingTokens.small),
                 ) {
-                    uiState.tags.forEach { tag ->
+                    data.tags.forEach { tag ->
                         val isSelected = uiState.selectedTagId == tag.id
                         UIKitTag(
                             text = tag.name,
                             state = if (isSelected) UIKitTagState.SELECTED else UIKitTagState.ACTIVE,
-                            onClick = { onEvent(MainScreenEvent.TagSelected(tag.id)) },
+                            onClick = { onEvent(MainScreenEvent.SelectTag(tag.id)) },
                         )
                     }
                 }
@@ -221,7 +198,7 @@ private fun MainScreenContent(
         }
 
         // All meetings
-        if (uiState.allMeetings.isNotEmpty()) {
+        if (data?.allMeetings?.isNotEmpty() == true) {
             item(key = "all_meetings_header") {
                 Text(
                     text = "Все встречи",
@@ -230,17 +207,9 @@ private fun MainScreenContent(
                 )
             }
 
-            items(uiState.allMeetings, key = { "meeting_${it.id}" }) { meeting ->
+            items(data.allMeetings, key = { "meeting_${it.id}" }) { meeting ->
                 UIKitEventCard(
-                    meeting = UIKitMeetingInfo(
-                        id = meeting.id,
-                        imageUrl = meeting.imageUrl,
-                        title = meeting.title,
-                        address = meeting.address.address,
-                        tags = meeting.tags,
-                        time = meeting.time,
-                        meetingStatus = meeting.meetingStatus,
-                    ),
+                    meeting = meeting.toUIKitInfo(),
                     onClick = { onMeetingClick(meeting.id) },
                 )
             }

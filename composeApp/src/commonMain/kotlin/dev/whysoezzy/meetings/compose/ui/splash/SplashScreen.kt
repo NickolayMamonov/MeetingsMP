@@ -55,8 +55,7 @@ fun SplashScreen(
         viewModel.checkAuth()
     }
 
-    Column(modifier = modifier, 
-        modifier = Modifier
+    Column(modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background),
         verticalArrangement = Arrangement.Center,

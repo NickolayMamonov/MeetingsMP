@@ -8,4 +8,5 @@ data class MainScreenUiState(
     val isLoading: Boolean = false,
     val error: ErrorType? = null,
     val isRefreshing: Boolean = false,
+    val selectedTagId: Long? = null,
 )

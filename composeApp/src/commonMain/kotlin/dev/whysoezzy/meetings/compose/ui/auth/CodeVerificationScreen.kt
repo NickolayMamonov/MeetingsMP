@@ -62,8 +62,7 @@ fun CodeVerificationScreen(
         }
     }
 
-    Column(modifier = modifier, 
-        modifier = Modifier
+    Column(modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background)
             .padding(SpacingTokens.large),

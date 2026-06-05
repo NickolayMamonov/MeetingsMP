@@ -25,14 +25,12 @@ import dev.whysoezzy.meetings.compose.components.UIKitSocialMediaList
 import dev.whysoezzy.meetings.compose.components.UIKitUserCommunitiesBlock
 import dev.whysoezzy.meetings.compose.components.UIKitUserMeetingsBlock
 import dev.whysoezzy.meetings.compose.components.UIKitUserProfileBlock
-import dev.whysoezzy.meetings.compose.models.UIKitCommunityInfo
-import dev.whysoezzy.meetings.compose.models.UIKitMeetingInfo
+import dev.whysoezzy.meetings.compose.mapper.toUIKit
+import dev.whysoezzy.meetings.compose.mapper.toUIKitInfo
 import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetRoute
-import dev.whysoezzy.meetings.compose.viewmodel.ProfileDetailsUiState
-import dev.whysoezzy.meetings.compose.viewmodel.ProfileDetailsEvent
 import dev.whysoezzy.meetings.compose.viewmodel.ProfileDetailsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -51,11 +49,14 @@ fun ProfileDetailsScreen(
     LaunchedEffect(Unit) {
         viewModel.navEvent.collect { event ->
             when (event) {
-                is dev.whysoezzy.meetings.compose.viewmodel.ProfileDetailsNavEvent.NavigateToEdit -> {
+                is ProfileNavEvent.NavigateToEditProfile -> {
                     navController.navigate(MeetRoute.ProfileEdit)
                 }
-                is dev.whysoezzy.meetings.compose.viewmodel.ProfileDetailsNavEvent.NavigateToAuth -> {
+                is ProfileNavEvent.NavigateToLogin -> {
                     navController.navigateAndClear(MeetRoute.PhoneInput)
+                }
+                is ProfileNavEvent.NavigateBack -> {
+                    navController.popBackStack()
                 }
             }
         }
@@ -63,8 +64,7 @@ fun ProfileDetailsScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = modifier, 
-                modifier = Modifier.fillMaxSize(),
+            Box(modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = MeetingsTheme.colors.primary)
@@ -76,7 +76,7 @@ fun ProfileDetailsScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = uiState.error ?: "Error",
+                    text = uiState.error.toString(),
                     style = MeetingsTheme.typography.bodyLarge,
                     color = MeetingsTheme.colors.error,
                 )
@@ -118,27 +118,27 @@ private fun ProfileDetailsContent(
         // Social media
         if (user.socialMedias.isNotEmpty()) {
             UIKitSocialMediaList(
-                socialMedias = user.socialMedias,
+                socialMedias = user.socialMedias.map { it.toUIKit() },
                 modifier = Modifier.padding(horizontal = SpacingTokens.medium),
             )
             Spacer(modifier = Modifier.height(SpacingTokens.medium))
         }
 
         // User's meetings
-        if (user.showMeetings && uiState.meetings.isNotEmpty()) {
+        if (user.showMeetings && uiState.userMeetings.isNotEmpty()) {
             UIKitUserMeetingsBlock(
                 title = "Мои встречи",
-                meetings = uiState.meetings,
+                meetings = uiState.userMeetings.map { it.toUIKitInfo() },
                 onMeetingClick = {},
             )
             Spacer(modifier = Modifier.height(SpacingTokens.medium))
         }
 
         // User's communities
-        if (user.showCommunities && uiState.communities.isNotEmpty()) {
+        if (user.showCommunities && uiState.userCommunities.isNotEmpty()) {
             UIKitUserCommunitiesBlock(
                 title = "Мои сообщества",
-                communities = uiState.communities,
+                communities = uiState.userCommunities.map { it.toUIKitInfo() },
                 onCommunityClick = {},
             )
             Spacer(modifier = Modifier.height(SpacingTokens.medium))
@@ -159,7 +159,6 @@ private fun ProfileDetailsContent(
         UIKitButtonOutlined(
             text = "Выйти",
             onClick = { onEvent(ProfileDetailsEvent.Logout) },
-            enabled = !uiState.isLoggingOut,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = SpacingTokens.medium),

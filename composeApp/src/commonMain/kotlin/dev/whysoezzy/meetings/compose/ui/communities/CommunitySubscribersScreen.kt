@@ -14,11 +14,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.whysoezzy.meetings.compose.components.UIKitPersonsGrid
+import dev.whysoezzy.meetings.compose.mapper.toUIKit
 import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
 import dev.whysoezzy.meetings.compose.viewmodel.CommunitySubscribersViewModel
-import androidx.compose.ui.Modifier
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -55,7 +55,7 @@ fun CommunitySubscribersScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = uiState.error ?: "Error",
+                        text = uiState.error.toString(),
                         style = MeetingsTheme.typography.bodyLarge,
                         color = MeetingsTheme.colors.error,
                     )
@@ -63,7 +63,7 @@ fun CommunitySubscribersScreen(
             }
             else -> {
                 UIKitPersonsGrid(
-                    persons = uiState.subscribers,
+                    persons = uiState.subscribers.map { it.toUIKit() },
                     onPersonClick = {},
                     modifier = Modifier.padding(top = SpacingTokens.medium),
                 )

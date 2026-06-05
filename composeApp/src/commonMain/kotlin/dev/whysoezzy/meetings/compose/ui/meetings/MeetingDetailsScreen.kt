@@ -26,6 +26,7 @@ import dev.whysoezzy.meetings.compose.components.UIKitButton
 import dev.whysoezzy.meetings.compose.components.UIKitHostCard
 import dev.whysoezzy.meetings.compose.components.UIKitParticipantsBlock
 import dev.whysoezzy.meetings.compose.components.UIKitTag
+import dev.whysoezzy.meetings.compose.mapper.toUIKit
 import dev.whysoezzy.meetings.compose.models.UIKitTagState
 import dev.whysoezzy.meetings.compose.models.UIKitAddress
 import dev.whysoezzy.meetings.compose.models.UIKitHost
@@ -34,8 +35,6 @@ import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetRoute
-import dev.whysoezzy.meetings.compose.viewmodel.MeetingDetailsUiState
-import dev.whysoezzy.meetings.compose.viewmodel.MeetingDetailsEvent
 import dev.whysoezzy.meetings.compose.viewmodel.MeetingDetailsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -56,11 +55,17 @@ fun MeetingDetailsScreen(
     LaunchedEffect(Unit) {
         viewModel.navEvent.collect { event ->
             when (event) {
-                is dev.whysoezzy.meetings.compose.viewmodel.MeetingDetailsNavEvent.Participants -> {
-                    navController.navigate(MeetRoute.MeetingParticipants(meetingId = event.meetingId.toString()))
+                is MeetingsNavEvent.NavigateToMeetingParticipants -> {
+                    navController.navigate(MeetRoute.MeetingParticipants(meetingId = event.meetingId))
                 }
-                is dev.whysoezzy.meetings.compose.viewmodel.MeetingDetailsNavEvent.NavigateBack -> {
+                is MeetingsNavEvent.NavigateToMeetingDetails -> {
+                    navController.navigate(MeetRoute.MeetingDetails(meetingId = event.meetingId))
+                }
+                is MeetingsNavEvent.NavigateBack -> {
                     navController.popBackStack()
+                }
+                is MeetingsNavEvent.NavigateToCreateMeeting -> {
+                    // Not applicable from this screen
                 }
             }
         }
@@ -68,8 +73,7 @@ fun MeetingDetailsScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = modifier, 
-                modifier = Modifier.fillMaxSize(),
+            Box(modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = MeetingsTheme.colors.primary)
@@ -81,7 +85,7 @@ fun MeetingDetailsScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = uiState.error ?: "Error",
+                    text = uiState.error.toString(),
                     style = MeetingsTheme.typography.bodyLarge,
                     color = MeetingsTheme.colors.error,
                 )
@@ -189,7 +193,7 @@ private fun MeetingDetailsContent(
                     title = communityHost.title,
                     description = communityHost.description,
                     imageUrl = communityHost.imageUrl,
-                    meetingsInfo = communityHost.meetingsInfo,
+                    meetingsInfo = communityHost.meetingsInfo.map { it.toUIKit() },
                 ),
                 onClick = {},
             )
@@ -199,7 +203,7 @@ private fun MeetingDetailsContent(
 
         // Participants
         UIKitParticipantsBlock(
-            participants = meeting.participants,
+            participants = meeting.participants.map { it.toUIKit() },
         )
 
         Text(
@@ -218,8 +222,8 @@ private fun MeetingDetailsContent(
             text = if (meeting.isUserInParticipants) "Отменить участие" else "Присоединиться",
             onClick = {
                 onEvent(
-                    if (meeting.isUserInParticipants) MeetingDetailsEvent.LeaveMeeting
-                    else MeetingDetailsEvent.JoinMeeting
+                    if (meeting.isUserInParticipants) MeetingDetailsEvent.Leave
+                    else MeetingDetailsEvent.Join
                 )
             },
             enabled = !uiState.isJoining,
