@@ -11,6 +11,7 @@ kotlin {
             api(libs.compose.foundation)
             api(libs.compose.material3)
             api(libs.compose.ui)
+            api(project(":meetings-sdk"))
         }
     }
 }
