@@ -16,6 +16,7 @@ kotlin {
             implementation(libs.ktorfit)
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.koin.core)
         }
 
         commonTest.dependencies {

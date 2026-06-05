@@ -6,6 +6,9 @@ import dev.whysoezzy.meetingssdk.auth.TokenProvider
 import dev.whysoezzy.meetingssdk.models.AuthResponse
 import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
 import dev.whysoezzy.meetingssdk.safeApiCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Implementation of [AuthRepository] that delegates to [MeetingsClient]
@@ -19,6 +22,8 @@ class AuthRepositoryImpl(
     private val tokenProvider: TokenProvider,
 ) : AuthRepository {
 
+    private val _isLoggedInFlow = MutableStateFlow(tokenProvider.getToken() != null)
+
     override suspend fun sendOtp(phone: String, firstName: String): Result<RequestCodeResponse> {
         return safeApiCall {
             meetingsClient.requestCode(phone, firstName)
@@ -28,16 +33,22 @@ class AuthRepositoryImpl(
     override suspend fun verifyOtp(phone: String, code: String): Result<AuthResponse> {
         return safeApiCall {
             meetingsClient.verifyCode(phone, code)
-        }
+        }.also { updateAuthState() }
     }
 
     override suspend fun logout(): Result<Unit> {
         return safeApiCall {
             meetingsClient.logout()
-        }
+        }.also { updateAuthState() }
     }
 
     override fun isLoggedIn(): Boolean {
         return tokenProvider.getToken() != null
+    }
+
+    override fun isLoggedInFlow(): Flow<Boolean> = _isLoggedInFlow.asStateFlow()
+
+    private fun updateAuthState() {
+        _isLoggedInFlow.value = tokenProvider.getToken() != null
     }
 }
