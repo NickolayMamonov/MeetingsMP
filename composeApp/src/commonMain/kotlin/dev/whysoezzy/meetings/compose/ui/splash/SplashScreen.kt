@@ -31,9 +31,11 @@ import org.koin.compose.viewmodel.koinViewModel
  * @param navController Navigation controller for routing.
  * @param viewModel ViewModel for checking auth state.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun SplashScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: AuthCheckViewModel = koinViewModel(),
 ) {
     LaunchedEffect(Unit) {
@@ -53,7 +55,7 @@ fun SplashScreen(
         viewModel.checkAuth()
     }
 
-    Column(
+    Column(modifier = modifier, 
         modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background),

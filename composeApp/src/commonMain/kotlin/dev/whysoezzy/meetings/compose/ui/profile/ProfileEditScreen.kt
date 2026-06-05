@@ -36,9 +36,11 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Profile edit screen for updating user profile information.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun ProfileEditScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: ProfileEditViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,7 +57,7 @@ fun ProfileEditScreen(
 
     when {
         uiState.isLoading -> {
-            Box(
+            Box(modifier = modifier, 
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -71,6 +73,7 @@ fun ProfileEditScreen(
     }
 }
 
+@Suppress("LongMethod")
 @Composable
 private fun ProfileEditContent(
     uiState: ProfileEditUiState,

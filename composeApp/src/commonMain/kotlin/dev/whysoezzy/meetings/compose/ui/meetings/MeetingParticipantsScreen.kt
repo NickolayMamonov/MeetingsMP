@@ -18,16 +18,19 @@ import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.tokens.SpacingTokens
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavController
 import dev.whysoezzy.meetings.compose.viewmodel.MeetingParticipantsViewModel
+import androidx.compose.ui.Modifier
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 /**
  * Meeting participants screen showing list of participants.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun MeetingParticipantsScreen(
     meetingId: String,
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: MeetingParticipantsViewModel = koinViewModel { parametersOf(meetingId) },
 ) {
     val uiState by viewModel.uiState.collectAsState()

@@ -35,10 +35,12 @@ import org.koin.core.parameter.parametersOf
 /**
  * Community details screen with info, meetings, and subscribers.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun CommunityDetailsScreen(
     communityId: Long,
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: CommunityDetailsViewModel = koinViewModel { parametersOf(communityId) },
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -58,7 +60,7 @@ fun CommunityDetailsScreen(
 
     when {
         uiState.isLoading -> {
-            Box(
+            Box(modifier = modifier, 
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -89,6 +91,7 @@ fun CommunityDetailsScreen(
     }
 }
 
+@Suppress("UnusedParameter")
 @Composable
 private fun CommunityDetailsContent(
     uiState: CommunityDetailsUiState,

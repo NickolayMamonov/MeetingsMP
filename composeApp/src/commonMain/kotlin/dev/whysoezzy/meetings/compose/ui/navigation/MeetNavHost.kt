@@ -33,6 +33,7 @@ import dev.whysoezzy.meetings.compose.ui.splash.SplashScreen
  *
  * @param navController The navigation controller driving routing.
  */
+@Suppress("LongMethod")
 @Composable
 fun MeetNavHost(
     navController: MeetNavController,

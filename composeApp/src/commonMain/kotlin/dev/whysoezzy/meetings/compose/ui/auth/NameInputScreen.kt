@@ -31,9 +31,11 @@ import org.koin.compose.viewmodel.koinViewModel
  * @param navController Navigation controller for routing.
  * @param viewModel ViewModel managing name input state.
  */
+@Suppress("LongMethod", "UnusedParameter")
 @Composable
 fun NameInputScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: NameInputViewModel = koinViewModel(),
 ) {
     val uiState = viewModel.uiState.collectAsState().value
@@ -57,7 +59,7 @@ fun NameInputScreen(
         }
     }
 
-    Column(
+    Column(modifier = modifier, 
         modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background)

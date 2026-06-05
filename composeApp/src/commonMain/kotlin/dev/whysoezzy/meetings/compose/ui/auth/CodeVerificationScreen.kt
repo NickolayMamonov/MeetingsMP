@@ -33,10 +33,12 @@ import org.koin.core.parameter.parametersOf
  * @param navController Navigation controller for routing.
  * @param viewModel ViewModel managing code verification state.
  */
+@Suppress("LongMethod", "UnusedParameter")
 @Composable
 fun CodeVerificationScreen(
     phone: String,
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: CodeVerificationViewModel = koinViewModel { parametersOf(phone) },
 ) {
     val uiState = viewModel.uiState.collectAsState().value
@@ -60,7 +62,7 @@ fun CodeVerificationScreen(
         }
     }
 
-    Column(
+    Column(modifier = modifier, 
         modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background)

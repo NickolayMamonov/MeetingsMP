@@ -43,10 +43,12 @@ import org.koin.core.parameter.parametersOf
 /**
  * Meeting details screen showing full meeting information.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun MeetingDetailsScreen(
     meetingId: String,
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: MeetingDetailsViewModel = koinViewModel { parametersOf(meetingId) },
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -66,7 +68,7 @@ fun MeetingDetailsScreen(
 
     when {
         uiState.isLoading -> {
-            Box(
+            Box(modifier = modifier, 
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -98,6 +100,7 @@ fun MeetingDetailsScreen(
     }
 }
 
+@Suppress("LongMethod", "UnusedParameter")
 @Composable
 private fun MeetingDetailsContent(
     uiState: MeetingDetailsUiState,

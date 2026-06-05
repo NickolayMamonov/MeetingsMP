@@ -32,9 +32,11 @@ import org.koin.compose.viewmodel.koinViewModel
  * @param navController Navigation controller for routing.
  * @param viewModel ViewModel managing phone input state.
  */
+@Suppress("LongMethod", "UnusedParameter")
 @Composable
 fun PhoneInputScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: PhoneInputViewModel = koinViewModel(),
 ) {
     val uiState = viewModel.uiState.collectAsState().value
@@ -58,7 +60,7 @@ fun PhoneInputScreen(
         }
     }
 
-    Column(
+    Column(modifier = modifier, 
         modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background)

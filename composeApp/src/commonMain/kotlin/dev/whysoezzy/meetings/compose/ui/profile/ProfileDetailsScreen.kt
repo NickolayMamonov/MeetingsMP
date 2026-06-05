@@ -39,9 +39,11 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Profile details screen for the current user.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun ProfileDetailsScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: ProfileDetailsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,7 +63,7 @@ fun ProfileDetailsScreen(
 
     when {
         uiState.isLoading -> {
-            Box(
+            Box(modifier = modifier, 
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {

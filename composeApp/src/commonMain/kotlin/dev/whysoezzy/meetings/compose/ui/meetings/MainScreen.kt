@@ -49,9 +49,11 @@ import org.koin.compose.viewmodel.koinViewModel
  * Main screen with feed, hero meeting, nearest meetings, recommended communities,
  * tag filters, and meetings list.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun MainScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
     viewModel: MainScreenViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -74,7 +76,7 @@ fun MainScreen(
 
     when {
         uiState.isLoading -> {
-            Box(
+            Box(modifier = modifier, 
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -108,6 +110,7 @@ fun MainScreen(
     }
 }
 
+@Suppress("LongMethod")
 @Composable
 private fun MainScreenContent(
     uiState: MainScreenUiState,

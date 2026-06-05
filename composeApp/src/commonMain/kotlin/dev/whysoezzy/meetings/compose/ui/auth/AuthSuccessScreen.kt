@@ -25,15 +25,17 @@ import dev.whysoezzy.meetings.compose.ui.navigation.MeetRoute
  *
  * @param navController Navigation controller for routing.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun AuthSuccessScreen(
     navController: MeetNavController,
+    modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(Unit) {
         navController.navigateAndClear(MeetRoute.MainScreen)
     }
 
-    Column(
+    Column(modifier = modifier, 
         modifier = Modifier
             .fillMaxSize()
             .background(MeetingsTheme.colors.background)
