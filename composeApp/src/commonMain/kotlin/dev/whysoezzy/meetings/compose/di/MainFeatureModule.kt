@@ -7,8 +7,6 @@ import dev.whysoezzy.meetings.domain.usecase.GetAllMeetingsUseCase
 import dev.whysoezzy.meetings.domain.usecase.GetMainScreenDataUseCase
 import dev.whysoezzy.meetings.domain.usecase.GetMeetingByIdUseCase
 import dev.whysoezzy.meetings.domain.usecase.GetMeetingParticipantsUseCase
-import dev.whysoezzy.meetings.domain.usecase.GetPopularMeetingsUseCase
-import dev.whysoezzy.meetings.domain.usecase.GetRecommendedCommunitiesUseCase
 import dev.whysoezzy.meetings.domain.usecase.JoinMeetingUseCase
 import dev.whysoezzy.meetings.domain.usecase.LeaveMeetingUseCase
 import org.koin.core.module.dsl.viewModel
@@ -23,16 +21,14 @@ import org.koin.dsl.module
 val MainFeatureModule = module {
     // Use cases
     single { GetMainScreenDataUseCase(get()) }
-    single { GetPopularMeetingsUseCase(get()) }
     single { GetAllMeetingsUseCase(get()) }
     single { GetMeetingByIdUseCase(get()) }
     single { GetMeetingParticipantsUseCase(get()) }
     single { JoinMeetingUseCase(get()) }
     single { LeaveMeetingUseCase(get()) }
-    single { GetRecommendedCommunitiesUseCase(get()) }
 
     // ViewModels
-    viewModel { MainScreenViewModel(get(), get(), get(), get()) }
+    viewModel { MainScreenViewModel(get(), get()) }
     viewModel { MeetingDetailsViewModel(get(), get(), get()) }
     viewModel { MeetingParticipantsViewModel(get()) }
 }

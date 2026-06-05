@@ -8,8 +8,6 @@ import dev.whysoezzy.meetings.compose.ui.meetings.MainScreenUiState
 import dev.whysoezzy.meetings.compose.ui.meetings.MeetingsNavEvent
 import dev.whysoezzy.meetings.domain.usecase.GetAllMeetingsUseCase
 import dev.whysoezzy.meetings.domain.usecase.GetMainScreenDataUseCase
-import dev.whysoezzy.meetings.domain.usecase.GetPopularMeetingsUseCase
-import dev.whysoezzy.meetings.domain.usecase.GetRecommendedCommunitiesUseCase
 import dev.whysoezzy.meetingssdk.ApiException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,9 +24,7 @@ import kotlinx.coroutines.launch
 
 class MainScreenViewModel(
     private val getMainScreenDataUseCase: GetMainScreenDataUseCase,
-    private val getPopularMeetingsUseCase: GetPopularMeetingsUseCase,
     private val getAllMeetingsUseCase: GetAllMeetingsUseCase,
-    private val getRecommendedCommunitiesUseCase: GetRecommendedCommunitiesUseCase,
 ) : ViewModel() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
