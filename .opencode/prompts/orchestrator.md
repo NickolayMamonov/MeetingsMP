@@ -23,6 +23,13 @@
 
 **Сложная (делаешь сам, но внимательнее):**
 - Новый экран или фича, архитектурные изменения, expect/actual, новые модули, DI
+
+## 3. Миграция из Meeting Android — ВАЖНО
+Весь код миграции клади в **meetings-sdk** (НЕ meetings-shared).
+meetings-sdk имеет все таргеты (android/desktop/ios), meetings-shared — только iOS.
+- Domain-модели/утилиты → `meetings-sdk/src/commonMain/...`
+- Platform-specific код → `meetings-sdk/src/androidMain/` или `desktopMain/`
+- Не редактируй `meetings-shared/build.gradle.kts` — миграционный код не туда
 - expect/actual декомпозиция
 - Новые эндпоинты в meetings-sdk
 - Изменения в convention plugins
