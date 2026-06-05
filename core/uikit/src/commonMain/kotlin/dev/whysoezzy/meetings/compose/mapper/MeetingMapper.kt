@@ -97,3 +97,13 @@ fun MeetingInfo.toUIKit(): UIKitMeetingInfo = UIKitMeetingInfo(
     time = time,
     meetingStatus = meetingStatus.toUIKit(),
 )
+
+fun Meeting.toUIKitInfo(): UIKitMeetingInfo = UIKitMeetingInfo(
+    id = id,
+    imageUrl = imageUrl,
+    title = title,
+    address = address.address,
+    tags = tags.map { it.toUIKit() },
+    time = time,
+    meetingStatus = meetingStatus.toUIKit(),
+)
