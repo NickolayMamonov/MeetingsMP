@@ -24,6 +24,11 @@ kotlin {
             implementation(libs.multiplatform.settings.test)
         }
 
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.core)
+        }
+
         androidMain.dependencies {
             implementation(libs.ktor.client.engine.okhttp)
         }
@@ -31,6 +36,12 @@ kotlin {
         val desktopMain by getting
         desktopMain.dependencies {
             implementation(libs.ktor.client.engine.okhttp)
+        }
+
+        val desktopTest by getting
+        desktopTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.swing)
         }
 
         iosMain.dependencies {
