@@ -64,7 +64,7 @@ fun MainScreen(
                     navController.navigate(MeetRoute.MeetingParticipants(meetingId = event.meetingId))
                 }
                 is MeetingsNavEvent.NavigateToCreateMeeting -> {
-                    // TODO: Navigate to create meeting screen
+                    // Navigate to create meeting screen (not yet implemented)
                 }
                 is MeetingsNavEvent.NavigateBack -> {
                     navController.popBackStack()
