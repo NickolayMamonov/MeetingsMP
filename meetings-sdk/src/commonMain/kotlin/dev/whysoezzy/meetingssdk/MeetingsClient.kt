@@ -11,6 +11,7 @@ import dev.whysoezzy.meetingssdk.auth.AuthToken
 import dev.whysoezzy.meetingssdk.auth.InMemoryTokenProvider
 import dev.whysoezzy.meetingssdk.auth.TokenProvider
 import dev.whysoezzy.meetingssdk.models.AuthResponse
+import dev.whysoezzy.meetingssdk.models.RefreshTokenBody
 import dev.whysoezzy.meetingssdk.models.RequestCodeBody
 import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
 import dev.whysoezzy.meetingssdk.models.VerifyCodeBody
@@ -103,6 +104,20 @@ class MeetingsClient internal constructor(
     suspend fun logout() {
         auth.logout()
         tokenProvider.clear()
+    }
+
+    /**
+     * Refresh the current authentication token.
+     * On success, stores the new token via the [tokenProvider].
+     *
+     * @return [AuthResponse] with the new authentication token and user profile.
+     */
+    suspend fun refreshToken(): AuthResponse {
+        val currentToken = tokenProvider.getToken()
+            ?: error("No token available for refresh")
+        val response = auth.refreshToken(RefreshTokenBody(currentToken.token))
+        tokenProvider.setToken(AuthToken(response.token))
+        return response
     }
 
     /** Whether the client has a stored authentication token. */
