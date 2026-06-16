@@ -141,9 +141,9 @@ fun UIKitCodeInput(
                         if (newDigit.length <= 1 && newDigit.all { it.isDigit() }) {
                             val newValue = StringBuilder(value)
                             if (newDigit.isEmpty() && index < value.length) {
-                                newValue.deleteCharAt(index)
+                                newValue.deleteAt(index)
                             } else if (newDigit.isNotEmpty()) {
-                                while (newValue.length <= index) newValue.append(' ')
+                                while (newValue.length <= index) newValue.append(" ")
                                 newValue[index] = newDigit[0]
                             }
                             onValueChange(newValue.toString().trimEnd())
