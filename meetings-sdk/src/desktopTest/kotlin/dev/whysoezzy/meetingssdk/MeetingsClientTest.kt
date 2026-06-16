@@ -74,7 +74,7 @@ class MeetingsClientTest {
             tokenProvider = InMemoryTokenProvider(),
             allowHttp = false,
         )
-        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+        assertFalse(client.isAuthenticated)
     }
 
     @Test
@@ -84,7 +84,7 @@ class MeetingsClientTest {
             tokenProvider = InMemoryTokenProvider(),
             allowHttp = false,
         )
-        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+        assertFalse(client.isAuthenticated)
     }
 
     @Test
@@ -118,12 +118,12 @@ class MeetingsClientTest {
             tokenProvider = InMemoryTokenProvider(),
             allowHttp = true,
         )
-        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+        assertFalse(client.isAuthenticated)
     }
 
     @Test
     fun meetingsClient_factory_defaultBaseUrlIsLocalhost() {
         val client = MeetingsClient()
-        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+        assertFalse(client.isAuthenticated)
     }
 }

@@ -165,11 +165,12 @@ fun MeetingsClient(
     allowHttp: Boolean = false,
     json: Json = defaultJson,
 ): MeetingsClient {
-    require(allowHttp || baseUrl.startsWith("https://") || "localhost" in baseUrl) {
+    val apiUrl = Url(baseUrl)
+    require(allowHttp || baseUrl.startsWith("https://") || apiUrl.host == "localhost") {
         "Production baseUrl must use HTTPS: $baseUrl. " +
             "Pass allowHttp = true only in debug builds or tests."
     }
-    val expectedApiHost = Url(baseUrl).host
+    val expectedApiHost = apiUrl.host
     val httpClient = defaultHttpClient(json, tokenProvider, enableLogging, expectedApiHost, baseUrl)
     return MeetingsClient(baseUrl, httpClient, tokenProvider)
 }
