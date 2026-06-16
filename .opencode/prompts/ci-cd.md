@@ -72,6 +72,21 @@ gh pr create \
 - Статус ревью
 - Готовность к мержу человеком
 
+## Фаза: Android smoke (device-conditional, после зелёного гейта)
+
+Выполняется ТОЛЬКО после успешных detekt + тесты + assembleDebug.
+
+1. `list_devices`. Если устройств нет → запиши в отчёт `smoke: SKIPPED (no device)` и
+   продолжай к PR. НЕ фейли гейт из-за отсутствия устройства.
+2. Если устройство есть → прочитай `docs/smoke/android-smoke.md` и выполни блоки SM-* по порядку
+   через mobile-тулы (install_app → launch_app → wait_for_element → assert_visible/assert_not_exists).
+3. Любой проваленный assert → `screenshot` + `get_logs` (фильтр по dev.whysoezzy.meetings),
+   приложи к отчёту, статус гейта = FAIL. PR не создаётся.
+4. Для не-UI задач (рефакторинг, build, docs) smoke помечается `smoke: N/A`.
+
+Это smoke на устройстве, а не замена объективного гейта. iOS/Desktop smoke на Windows недоступны
+(claude-in-mobile: Desktop — только macOS, iOS — только Simulator на macOS).
+
 ---
 
 # ЧТО НЕЛЬЗЯ ДЕЛАТЬ
@@ -81,3 +96,4 @@ gh pr create \
 - **НЕ** делать force-push
 - **НЕ** создавать PR при красном гейте
 - **НЕ** игнорировать предупреждения detekt (warnings допустимы, errors — блокер)
+

@@ -63,7 +63,7 @@
     "build": {
       "description": "Разработка в Kotlin/Compose. Внутренняя петля через MCP mobile. Для простых и средних задач. Доступен как primary (Tab) и как subagent (@build) для оркестратора.",
       "mode": "all",
-      "model": "opencode-go/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-pro",
       "temperature": 0.2,
       "prompt": "{file:./.opencode/prompts/build.md}",
       "color": "#66BB6A",
@@ -145,6 +145,7 @@
       "permission": {
         "edit": "deny",
         "bash": {
+          "mobile_*": "allow",
           "*": "deny",
           "./gradlew*": "allow",
           "git branch*": "allow",
@@ -165,7 +166,7 @@
 
   "command": {
     "cycle": {
-      "template": "Запусти полный автоматический цикл разработки.\nЕсли в запросе указан номер issue (например \"run full cycle on issue #16\") — работай с ним.\nЕсли номер не указан — возьми первый открытый Issue с меткой 'agent-task'.\n\nЦикл:\n1. Получи Issue (конкретный номер или первый agent-task)\n2. Проанализируй код и создай план реализации\n3. Создай ветку feature/<issue>-<slug> от develop\n4. Реализуй задачу строго по плану\n5. Self-review: модульные границы, тесты, detekt\n6. Прогони локальный гейт и создай PR\n7. Доложи результат\n\nНЕ используй Task tool. Делай всё сам inline.",
+      "template": "Запусти полный автоматический цикл разработки.\nЕсли в запросе указан номер issue (например \"run full cycle on issue #16\") — работай с ним.\nЕсли номер не указан — возьми первый открытый Issue с меткой 'agent-task'.\n\nЦикл:\n1. Получи Issue (конкретный номер или первый agent-task)\n2. Проанализируй код и создай план реализации\n3. Создай ветку feature/<issue>-<slug> от develop\n4. Реализуй задачу строго по плану\n5. Self-review: модульные границы, тесты, detekt\n6. Прогони локальный гейт командой `./gradlew detekt desktopTest testDebugUnitTest assembleDebug --no-daemon --console=plain` и создай PR\n7. Доложи результат\n\nНЕ используй Task tool. Делай всё сам inline.",
       "description": "Полный автоцикл: Issue → code → PR. !cycle для первого agent-task, !cycle N для конкретного",
       "agent": "orchestrator"
     },
@@ -175,7 +176,7 @@
       "agent": "orchestrator"
     },
     "implement": {
-      "template": "Реализуй текущую задачу согласно утверждённому плану. Используй @developer-complex для сложных задач и @build для простых. После реализации прогнай локальный гейт (detekt + desktopTest + testDebugUnitTest + assembleDebug).",
+      "template": "Реализуй текущую задачу согласно утверждённому плану. Используй @developer-complex для сложных задач и @build для простых. После реализации прогони локальный гейт ОДНОЙ командой С ФЛАГАМИ (без них Gradle-демон и спиннер зависают в агентском запуске): ./gradlew detekt desktopTest testDebugUnitTest assembleDebug --no-daemon --console=plain.",
       "description": "Реализовать текущую задачу (plan → code → локальный гейт)",
       "agent": "orchestrator"
     },
@@ -201,9 +202,9 @@
   "mcp": {
     "mobile": {
       "type": "local",
-      "command": ["claude-in-mobile", "mcp"],
-      "enabled": false,
-      "environment": {}
+      "command": ["node", "C:/Users/whysoezzy/claude-in-mobile/dist/index.js"],
+      "enabled": true,
+      "environment": { "MOBILE_PROFILE": "android" }
     }
   },
 

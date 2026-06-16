@@ -223,3 +223,63 @@ flash — на скоростные агенты (build/test), сильный re
 изоляция по worktree) → Quality gate (commonTest + Roborazzi + GMD + CodeQL + convention plugins)**,
 с шестифазным циклом задачи **Design → Plan → Build → Gate → Review → Release** и матрицей по четырём
 таргетам. Доверие — гейтам, не агентам. Начинаем с клетки, заканчиваем роем.
+
+---
+
+## 12. Issues to Resolve (Multi-Expert Review, 2026-06-14)
+
+**Review verdict: FAIL** — 7 blockers, 10 important improvements, 10 suggestions.
+Panel: kmp-expert, architecture-expert, devops-expert, security-expert.
+
+### 🔴 Blockers (must fix before implementation)
+
+- **B1. meetings-shared указан как модуль бизнес-логики — противоречит AGENTS.md §5a**
+  (kmp-expert, architecture-expert, devops-expert). Убрать `meetings-shared` из перечня модулей бизнес-логики в §1 и §6. За meetings-shared закрепить роль «iOS точка входа (тонкий модуль)», весь миграционный код — в `meetings-sdk`. AGENTS.md §5a: «Не редактировать meetings-shared/build.gradle.kts».
+
+- **B2. Отсутствие `actual`-реализаций для iOS блокирует компиляцию**
+  (kmp-expert). В `commonMain` объявлены `expect fun mainDispatcher()` и `expect class CryptoHelper`, но в `iosMain` нет `DispatcherProvider.ios.kt`. Создать iOS-реализации для всех `expect`-деклараций. Включить `MissingActual`-проверку в CI.
+
+- **B3. GitHub Actions-воркфлои не специфицированы — Фаза 0 нереализуема**
+  (devops-expert). Добавить спецификацию: `quality-checks.yml` (PR/push) и `ci.yml` (merge в develop/main) с конкретными job-ами, шагами, timeout, cache-ключами.
+
+- **B4. Нет стратегии управления секретами**
+  (devops-expert). Определить: signing keys → GitHub Secrets (base64 keystore), API-токены → только через GitHub Secrets / Vault, OpenClaw → за VPN с ротацией токенов. Добавить раздел «Secrets Management».
+
+- **B5. iOS CryptoHelper — XOR-обфускация (OWASP A02:2021)**
+  (security-expert, kmp-expert). Заменить `CryptoHelper.ios.kt` (XOR с захардкоженным ключом) на прямое использование iOS Keychain Services.
+
+- **B6. Desktop CryptoHelper — AES-ключ из константы в исходниках**
+  (security-expert). Заменить вывод ключа из `"meetings_auth_token_key_v1"` на генерацию случайного ключа при первом запуске с хранением в OS keyring.
+
+- **B7. CI/CD-гейты безопасности не реализованы — Phase 0 отсутствует**
+  (devops-expert + security-expert, эскалация). Реализовать до подключения агентов: CodeQL + secret scan workflow, branch protection на main/develop, CODEOWNERS, `git-secrets` pre-commit hook, `.env` в `.gitignore`.
+
+### 🟠 Important Improvements
+
+- **I1. Контракты между плоскостями** (architecture-expert): добавить формат событий и протоколов между Control/Execution/Quality.
+- **I2. Принуждение границ модулей в CI** (architecture-expert): добавить Konsist/ArchUnit-правила в Фазу 0.
+- **I3. Команда локального гейта** (architecture-expert): заменить `:meetings-shared:allTests` → `:meetings-sdk:allTests` + `:meetings-sdk:desktopTest`.
+- **I4. Release build без R8/signing** (devops-expert): `isMinifyEnabled = true`, ProGuard/R8 rules, signing из CI secrets.
+- **I5. Дублирование commonTest.dependencies** (devops-expert): удалить дублирующийся блок в `meetings-sdk/build.gradle.kts`.
+- **I6. Кэширование Gradle в CI** (devops-expert): `gradle/actions/setup-gradle`, кэш Konan, Android SDK.
+- **I7. HTTP по умолчанию в MeetingsClient** (security-expert): заменить на HTTPS, добавить `network_security_config.xml` с `cleartextTrafficPermitted="false"`.
+- **I8. OpenClaw-скрипт логирует токен** (security-expert): убрать inline placeholder и вывод токена в консоль.
+- **I9. WasmJs-аудит без предварительного анализа** (kmp-expert, architecture-expert): добавить таблицу wasmJs-совместимости ключевых зависимостей.
+- **I10. DispatcherProvider на Desktop** (kmp-expert): заменить `Dispatchers.Default` → `Dispatchers.Main`.
+
+### 🔵 Suggestions
+
+- iOS `runComposeUiTest` — экспериментальный; уточнить зрелость в матрице (kmp-expert)
+- Рассмотреть `appleMain` intermediate source set на будущее (kmp-expert)
+- Унифицировать таблицу агентов в документе и AGENTS.md §9 (architecture-expert)
+- Стратегия стоимости iOS CI: ~$1.5/билд, nightly вместо каждого PR (devops-expert)
+- Спецификация branch protection и CODEOWNERS (devops-expert)
+- Релизная автоматизация: semver, changelog, tag-driven release (devops-expert)
+- Dependabot/Renovate + SBOM (cyclonedx) (devops-expert)
+- Политика хранения `ANTHROPIC_API_KEY`: только env/менеджер секретов ОС (security-expert)
+- Санитизация тела ответа auth-эндпоинтов в Ktor-логах (security-expert)
+
+### ⚠️ Open Decisions
+
+- **AppleMain сейчас или потом?** Заводить отдельную задачу или отложить до macOS-таргета?
+- **Claude Opus (§5.1) vs AGENTS.md §9** — принимать §5.1 как предлагаемое изменение к AGENTS.md, или AGENTS.md — авторитетный источник?
