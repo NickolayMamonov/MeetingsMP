@@ -14,6 +14,8 @@ import dev.whysoezzy.meetingssdk.models.RefreshTokenBody
 import dev.whysoezzy.meetingssdk.models.RefreshTokenResponse
 import dev.whysoezzy.meetingssdk.models.SendOtpBody
 import dev.whysoezzy.meetingssdk.models.VerifyOtpBody
+import dev.whysoezzy.meetingssdk.network.CertificatePins
+import dev.whysoezzy.meetingssdk.network.createHttpClientEngine
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
@@ -146,6 +148,7 @@ class MeetingsClient internal constructor(
  * - Optional request/response logging
  * - Host-scoped token sending (only to the API host)
  * - HTTPS validation for production URLs
+ * - Optional TLS certificate pinning via [CertificatePins]
  *
  * @param baseUrl Base URL for the API server. Must use HTTPS in production
  *   (HTTP is only allowed for localhost development URLs).
@@ -153,16 +156,22 @@ class MeetingsClient internal constructor(
  * @param enableLogging Whether to enable HTTP request/response logging.
  * @param allowHttp Whether to allow non-localhost HTTP URLs. Defaults to `false`.
  *   Set to `true` only in debug builds or tests that need plain HTTP.
+ * @param pins Optional [CertificatePins] for TLS certificate pinning.
+ *   When provided, the HTTP client engine is configured to validate server
+ *   certificates against the configured SHA-256 pin hashes. Pass `null` to
+ *   disable pinning (standard TLS validation still applies).
  * @param json Custom JSON configuration for serialization. Uses sensible defaults if not provided.
  * @return A configured [MeetingsClient] instance.
  * @throws IllegalArgumentException if [baseUrl] uses HTTP and is not localhost
  *   and [allowHttp] is `false`.
  */
+@Suppress("LongParameterList")
 fun MeetingsClient(
     baseUrl: String = "http://localhost:8080/",
     tokenProvider: TokenProvider = InMemoryTokenProvider(),
     enableLogging: Boolean = false,
     allowHttp: Boolean = false,
+    pins: CertificatePins? = null,
     json: Json = defaultJson,
 ): MeetingsClient {
     val apiUrl = Url(baseUrl)
@@ -171,7 +180,7 @@ fun MeetingsClient(
             "Pass allowHttp = true only in debug builds or tests."
     }
     val expectedApiHost = apiUrl.host
-    val httpClient = defaultHttpClient(json, tokenProvider, enableLogging, expectedApiHost, baseUrl)
+    val httpClient = defaultHttpClient(json, tokenProvider, enableLogging, expectedApiHost, baseUrl, pins)
     return MeetingsClient(baseUrl, httpClient, tokenProvider)
 }
 
@@ -182,20 +191,24 @@ private val defaultJson = Json {
     coerceInputValues = true
 }
 
+@Suppress("LongParameterList")
 private fun defaultHttpClient(
     json: Json,
     tokenProvider: TokenProvider,
     enableLogging: Boolean,
     expectedApiHost: String,
     baseUrl: String,
+    pins: CertificatePins? = null,
 ): HttpClient {
     // Dedicated client for token refresh — reused across refresh calls
     // to avoid creating a new HttpClient (and TLS handshake) on every 401.
-    val refreshClient = HttpClient {
+    val refreshEngine = createHttpClientEngine(pins)
+    val refreshClient = HttpClient(refreshEngine) {
         install(ContentNegotiation) { json(json) }
     }
 
-    return HttpClient {
+    val mainEngine = createHttpClientEngine(pins)
+    return HttpClient(mainEngine) {
         install(ContentNegotiation) {
             json(json)
         }
