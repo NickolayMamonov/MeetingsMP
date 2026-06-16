@@ -40,7 +40,6 @@ import kotlinx.serialization.json.Json
  * @property baseUrl Base URL for the API server.
  * @property httpClient Configured Ktor [HttpClient] instance.
  * @property tokenProvider Strategy for storing and retrieving authentication tokens.
- * @property auth Internal [AuthApi] instance for token refresh operations.
  */
 class MeetingsClient internal constructor(
     private val baseUrl: String,
@@ -146,21 +145,33 @@ class MeetingsClient internal constructor(
  * - Content negotiation (JSON)
  * - Optional request/response logging
  * - Host-scoped token sending (only to the API host)
+ * - HTTPS validation for production URLs
  *
- * @param baseUrl Base URL for the API server. Defaults to a local development server.
+ * @param baseUrl Base URL for the API server. Must use HTTPS in production
+ *   (HTTP is only allowed for localhost development URLs).
  * @param tokenProvider Strategy for token storage. Defaults to [InMemoryTokenProvider].
  * @param enableLogging Whether to enable HTTP request/response logging.
+ * @param allowHttp Whether to allow non-localhost HTTP URLs. Defaults to `false`.
+ *   Set to `true` only in debug builds or tests that need plain HTTP.
  * @param json Custom JSON configuration for serialization. Uses sensible defaults if not provided.
  * @return A configured [MeetingsClient] instance.
+ * @throws IllegalArgumentException if [baseUrl] uses HTTP and is not localhost
+ *   and [allowHttp] is `false`.
  */
 fun MeetingsClient(
     baseUrl: String = "http://localhost:8080/",
     tokenProvider: TokenProvider = InMemoryTokenProvider(),
     enableLogging: Boolean = false,
+    allowHttp: Boolean = false,
     json: Json = defaultJson,
 ): MeetingsClient {
-    val expectedApiHost = Url(baseUrl).host
-    val httpClient = defaultHttpClient(json, tokenProvider, enableLogging, expectedApiHost)
+    val apiUrl = Url(baseUrl)
+    require(allowHttp || baseUrl.startsWith("https://") || apiUrl.host == "localhost") {
+        "Production baseUrl must use HTTPS: $baseUrl. " +
+            "Pass allowHttp = true only in debug builds or tests."
+    }
+    val expectedApiHost = apiUrl.host
+    val httpClient = defaultHttpClient(json, tokenProvider, enableLogging, expectedApiHost, baseUrl)
     return MeetingsClient(baseUrl, httpClient, tokenProvider)
 }
 
@@ -176,7 +187,14 @@ private fun defaultHttpClient(
     tokenProvider: TokenProvider,
     enableLogging: Boolean,
     expectedApiHost: String,
+    baseUrl: String,
 ): HttpClient {
+    // Dedicated client for token refresh — reused across refresh calls
+    // to avoid creating a new HttpClient (and TLS handshake) on every 401.
+    val refreshClient = HttpClient {
+        install(ContentNegotiation) { json(json) }
+    }
+
     return HttpClient {
         install(ContentNegotiation) {
             json(json)
@@ -195,9 +213,9 @@ private fun defaultHttpClient(
 
                     try {
                         val response = authApiRefreshToken(
-                            baseUrl = expectedApiHost,
+                            client = refreshClient,
+                            baseUrl = baseUrl,
                             refreshToken = oldRefreshToken,
-                            json = json,
                         )
                         val currentRefreshToken = tokenProvider.getRefreshToken() ?: oldRefreshToken
                         tokenProvider.saveTokens(
@@ -229,21 +247,21 @@ private fun defaultHttpClient(
  * Performs a manual refresh token request outside the Ktorfit API layer.
  * This is needed because the Bearer plugin's refreshTokens block runs before
  * the Ktorfit instance is fully initialized, so we can't use [AuthApi] directly.
+ *
+ * Uses a pre-configured [client] that is created once per [MeetingsClient]
+ * instance (see [defaultHttpClient]) and reused across refresh calls.
+ *
+ * @param client Dedicated [HttpClient] for token refresh (shared instance).
+ * @param baseUrl Full base URL of the API server (e.g. "https://api.meetings.mp/").
+ * @param refreshToken The refresh token to exchange for a new access token.
  */
 private suspend fun authApiRefreshToken(
+    client: HttpClient,
     baseUrl: String,
     refreshToken: String,
-    json: Json,
 ): RefreshTokenResponse {
-    val client = HttpClient {
-        install(ContentNegotiation) { json(json) }
-    }
-    try {
-        return client.post("${baseUrl.trimEnd('/')}/auth/refresh") {
-            contentType(ContentType.Application.Json)
-            setBody(RefreshTokenBody(refreshToken))
-        }.body<RefreshTokenResponse>()
-    } finally {
-        client.close()
-    }
+    return client.post("${baseUrl.trimEnd('/')}/auth/refresh") {
+        contentType(ContentType.Application.Json)
+        setBody(RefreshTokenBody(refreshToken))
+    }.body<RefreshTokenResponse>()
 }
