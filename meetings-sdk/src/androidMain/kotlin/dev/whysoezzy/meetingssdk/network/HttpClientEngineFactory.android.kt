@@ -9,12 +9,13 @@ import okhttp3.CertificatePinner
 /**
  * Android implementation of [createHttpClientEngine].
  *
- * Uses the OkHttp engine with [CertificatePinner] when pins are provided.
- * When [pins] is null or empty, the engine is created without pinning
- * (standard TLS validation still applies).
+ * Uses the OkHttp engine with [CertificatePinner] when pins are provided
+ * and [CertificatePins.enforcePins] is `true`.
+ * When [pins] is `null`, empty, or `enforcePins` is `false`,
+ * the engine is created without pinning (standard TLS validation still applies).
  */
 actual fun createHttpClientEngine(pins: CertificatePins?): HttpClientEngine {
-    if (pins != null && !pins.isEmpty) {
+    if (pins != null && !pins.isEmpty && pins.enforcePins) {
         val pinnerBuilder = CertificatePinner.Builder()
         for ((hostname, pinList) in pins.pins) {
             for (pin in pinList) {
