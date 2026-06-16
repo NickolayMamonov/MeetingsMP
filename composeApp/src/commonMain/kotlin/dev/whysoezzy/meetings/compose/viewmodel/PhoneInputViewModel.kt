@@ -38,9 +38,6 @@ class PhoneInputViewModel(
             is PhoneInputEvent.PhoneChanged -> {
                 _uiState.update { it.copy(phone = event.phone) }
             }
-            is PhoneInputEvent.FirstNameChanged -> {
-                _uiState.update { it.copy(firstName = event.firstName) }
-            }
             is PhoneInputEvent.SendCode -> sendCode()
             is PhoneInputEvent.ClearError -> {
                 _uiState.update { it.copy(error = null) }
@@ -50,18 +47,17 @@ class PhoneInputViewModel(
 
     private fun sendCode() {
         val state = _uiState.value
-        if (state.phone.isBlank() || state.firstName.isBlank()) return
+        if (state.phone.isBlank()) return
 
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            sendOtpUseCase(state.phone, state.firstName)
-                .onSuccess { response ->
+            sendOtpUseCase(state.phone)
+                .onSuccess {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             codeSent = true,
-                            retryAfterSeconds = response.retryAfterSeconds,
                         )
                     }
                     _navEvent.emit(AuthNavEvent.NavigateToCodeVerification)

@@ -1,6 +1,5 @@
 package dev.whysoezzy.meetingssdk
 
-import de.jensklingenberg.ktorfit.Ktorfit
 import dev.whysoezzy.meetingssdk.api.AuthApi
 import dev.whysoezzy.meetingssdk.api.CommunitiesApi
 import dev.whysoezzy.meetingssdk.api.EventsApi
@@ -12,37 +11,44 @@ import dev.whysoezzy.meetingssdk.auth.InMemoryTokenProvider
 import dev.whysoezzy.meetingssdk.auth.TokenProvider
 import dev.whysoezzy.meetingssdk.models.AuthResponse
 import dev.whysoezzy.meetingssdk.models.RefreshTokenBody
-import dev.whysoezzy.meetingssdk.models.RequestCodeBody
-import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
-import dev.whysoezzy.meetingssdk.models.VerifyCodeBody
+import dev.whysoezzy.meetingssdk.models.RefreshTokenResponse
+import dev.whysoezzy.meetingssdk.models.SendOtpBody
+import dev.whysoezzy.meetingssdk.models.VerifyOtpBody
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.Url
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 /**
  * Main client for the Meetings API. Provides access to all API endpoints
- * and manages authentication state.
+ * and manages authentication state with automatic token refresh.
  *
  * Create an instance via the [MeetingsClient] factory function.
  *
  * @property baseUrl Base URL for the API server.
  * @property httpClient Configured Ktor [HttpClient] instance.
  * @property tokenProvider Strategy for storing and retrieving authentication tokens.
+ * @property auth Internal [AuthApi] instance for token refresh operations.
  */
 class MeetingsClient internal constructor(
     private val baseUrl: String,
     private val httpClient: HttpClient,
-    private val tokenProvider: TokenProvider
+    private val tokenProvider: TokenProvider,
 ) {
     private val ktorfit by lazy {
-        Ktorfit.Builder()
+        de.jensklingenberg.ktorfit.Ktorfit.Builder()
             .httpClient(httpClient)
             .baseUrl(baseUrl)
             .build()
@@ -73,60 +79,73 @@ class MeetingsClient internal constructor(
     val interests: InterestsApi by lazy { ktorfit.create<InterestsApi>() }
 
     /**
-     * Request a verification code to be sent to the given phone number.
+     * Send a one-time password to the given phone number.
      *
-     * @param phone Phone number to send the code to.
-     * @param firstName User's first name for registration.
-     * @return [RequestCodeResponse] with retry timing information.
+     * @param phone Phone number to send the OTP to.
+     * @return Unit on success.
      */
-    suspend fun requestCode(phone: String, firstName: String): RequestCodeResponse {
-        return auth.requestCode(RequestCodeBody(phone, firstName))
+    suspend fun sendOtp(phone: String) {
+        auth.sendOtp(SendOtpBody(phone))
     }
 
     /**
-     * Verify the code sent to the user's phone.
-     * On success, stores the authentication token via the [tokenProvider].
+     * Verify the OTP code sent to the user's phone.
+     * On success, stores both access and refresh tokens via the [tokenProvider].
      *
      * @param phone Phone number that received the code.
      * @param code The verification code to validate.
-     * @return [AuthResponse] with the authentication token and user profile.
+     * @param name Optional first name for new user registration.
+     * @param surname Optional surname for new user registration.
+     * @return [AuthResponse] with access token, refresh token, and user profile.
      */
-    suspend fun verifyCode(phone: String, code: String): AuthResponse {
-        val response = auth.verifyCode(VerifyCodeBody(phone, code))
-        tokenProvider.setToken(AuthToken(response.token))
+    suspend fun verifyOtp(phone: String, code: String, name: String? = null, surname: String? = null): AuthResponse {
+        val response = auth.verifyOtp(VerifyOtpBody(phone, code, name, surname))
+        tokenProvider.saveTokens(AuthToken(response.accessToken, response.refreshToken))
         return response
     }
 
     /**
      * Log out the current user by invalidating the session on the server
-     * and clearing the local authentication token.
+     * and clearing the locally stored tokens.
      */
     suspend fun logout() {
         auth.logout()
-        tokenProvider.clear()
+        tokenProvider.clearTokens()
     }
 
     /**
-     * Refresh the current authentication token.
-     * On success, stores the new token via the [tokenProvider].
+     * Refresh the access token using the stored refresh token.
+     * On success, stores the new access token via the [tokenProvider].
      *
-     * @return [AuthResponse] with the new authentication token and user profile.
+     * Note: The refresh token itself is not rotated — the same UUID remains
+     * valid until its expiration (30 days) or explicit logout.
+     *
+     * @return [Result.success] with the new access token string,
+     *   or [Result.failure] wrapping an [IllegalStateException] if no
+     *   refresh token is available.
      */
-    suspend fun refreshToken(): AuthResponse {
-        val currentToken = tokenProvider.getToken()
-            ?: error("No token available for refresh")
-        val response = auth.refreshToken(RefreshTokenBody(currentToken.token))
-        tokenProvider.setToken(AuthToken(response.token))
-        return response
+    suspend fun refreshAccessToken(): Result<String> {
+        val refreshToken = tokenProvider.getRefreshToken()
+            ?: return Result.failure(IllegalStateException("No refresh token available for refresh"))
+        val response = auth.refreshToken(RefreshTokenBody(refreshToken))
+        val currentRefreshToken = tokenProvider.getRefreshToken() ?: refreshToken
+        tokenProvider.saveTokens(AuthToken(response.accessToken, currentRefreshToken))
+        return Result.success(response.accessToken)
     }
 
-    /** Whether the client has a stored authentication token. */
+    /** Whether the client has a stored access token. */
     val isAuthenticated: Boolean
-        get() = tokenProvider.getToken() != null
+        get() = tokenProvider.getAccessToken() != null
 }
 
 /**
  * Factory function for creating a [MeetingsClient] with a pre-configured HTTP client.
+ *
+ * The HTTP client includes:
+ * - Bearer token authentication with automatic refresh
+ * - Content negotiation (JSON)
+ * - Optional request/response logging
+ * - Host-scoped token sending (only to the API host)
  *
  * @param baseUrl Base URL for the API server. Defaults to a local development server.
  * @param tokenProvider Strategy for token storage. Defaults to [InMemoryTokenProvider].
@@ -138,9 +157,10 @@ fun MeetingsClient(
     baseUrl: String = "http://localhost:8080/",
     tokenProvider: TokenProvider = InMemoryTokenProvider(),
     enableLogging: Boolean = false,
-    json: Json = defaultJson
+    json: Json = defaultJson,
 ): MeetingsClient {
-    val httpClient = defaultHttpClient(json, tokenProvider, enableLogging)
+    val expectedApiHost = Url(baseUrl).host
+    val httpClient = defaultHttpClient(json, tokenProvider, enableLogging, expectedApiHost)
     return MeetingsClient(baseUrl, httpClient, tokenProvider)
 }
 
@@ -154,7 +174,8 @@ private val defaultJson = Json {
 private fun defaultHttpClient(
     json: Json,
     tokenProvider: TokenProvider,
-    enableLogging: Boolean
+    enableLogging: Boolean,
+    expectedApiHost: String,
 ): HttpClient {
     return HttpClient {
         install(ContentNegotiation) {
@@ -164,11 +185,34 @@ private fun defaultHttpClient(
         install(Auth) {
             bearer {
                 loadTokens {
-                    tokenProvider.getToken()?.let { authToken ->
-                        BearerTokens(accessToken = authToken.token, refreshToken = null)
+                    val accessToken = tokenProvider.getAccessToken() ?: return@loadTokens null
+                    val refreshToken = tokenProvider.getRefreshToken()
+                    BearerTokens(accessToken = accessToken, refreshToken = refreshToken)
+                }
+                refreshTokens {
+                    val oldRefreshToken = tokenProvider.getRefreshToken()
+                        ?: return@refreshTokens null
+
+                    try {
+                        val response = authApiRefreshToken(
+                            baseUrl = expectedApiHost,
+                            refreshToken = oldRefreshToken,
+                            json = json,
+                        )
+                        val currentRefreshToken = tokenProvider.getRefreshToken() ?: oldRefreshToken
+                        tokenProvider.saveTokens(
+                            AuthToken(response.accessToken, currentRefreshToken)
+                        )
+                        BearerTokens(accessToken = response.accessToken, refreshToken = currentRefreshToken)
+                    } catch (_: Exception) {
+                        // Refresh failed — clear tokens and force re-authentication
+                        tokenProvider.clearTokens()
+                        null
                     }
                 }
-                sendWithoutRequest { true }
+                sendWithoutRequest { request ->
+                    request.url.host == expectedApiHost
+                }
             }
         }
 
@@ -178,5 +222,28 @@ private fun defaultHttpClient(
                 sanitizeHeader { header -> header == HttpHeaders.Authorization }
             }
         }
+    }
+}
+
+/**
+ * Performs a manual refresh token request outside the Ktorfit API layer.
+ * This is needed because the Bearer plugin's refreshTokens block runs before
+ * the Ktorfit instance is fully initialized, so we can't use [AuthApi] directly.
+ */
+private suspend fun authApiRefreshToken(
+    baseUrl: String,
+    refreshToken: String,
+    json: Json,
+): RefreshTokenResponse {
+    val client = HttpClient {
+        install(ContentNegotiation) { json(json) }
+    }
+    try {
+        return client.post("${baseUrl.trimEnd('/')}/auth/refresh") {
+            contentType(ContentType.Application.Json)
+            setBody(RefreshTokenBody(refreshToken))
+        }.body<RefreshTokenResponse>()
+    } finally {
+        client.close()
     }
 }

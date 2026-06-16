@@ -22,8 +22,8 @@ class ModelsSerializationTest {
 
     @Test
     fun refreshTokenBody_serializesCorrectly() {
-        val body = RefreshTokenBody(token = "abc123")
-        assertEquals("abc123", body.token)
+        val body = RefreshTokenBody(refreshToken = "abc123")
+        assertEquals("abc123", body.refreshToken)
     }
 
     @Test
