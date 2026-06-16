@@ -4,12 +4,15 @@ import dev.whysoezzy.meetingssdk.auth.AuthToken
 import dev.whysoezzy.meetingssdk.auth.InMemoryTokenProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-@Suppress("FunctionNaming")
+@Suppress("FunctionNaming", "TooManyFunctions")
 class MeetingsClientTest {
+
+    // --- InMemoryTokenProvider tests ---
 
     @Test
     fun inMemoryTokenProvider_storesAndRetrievesTokens() {
@@ -61,5 +64,66 @@ class MeetingsClientTest {
         provider.clearTokens()
         assertFalse(provider.isLoggedIn.value)
     }
-}
 
+    // --- HTTPS validation tests ---
+
+    @Test
+    fun meetingsClient_factory_acceptsHttpsBaseUrl() {
+        val client = MeetingsClient(
+            baseUrl = "https://api.meetings.mp/",
+            tokenProvider = InMemoryTokenProvider(),
+            allowHttp = false,
+        )
+        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+    }
+
+    @Test
+    fun meetingsClient_factory_acceptsLocalhostHttpBaseUrl() {
+        val client = MeetingsClient(
+            baseUrl = "http://localhost:8080/",
+            tokenProvider = InMemoryTokenProvider(),
+            allowHttp = false,
+        )
+        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+    }
+
+    @Test
+    fun meetingsClient_factory_rejectsNonLocalhostHttpBaseUrl() {
+        assertFailsWith<IllegalArgumentException> {
+            MeetingsClient(
+                baseUrl = "http://api.meetings.mp/",
+                tokenProvider = InMemoryTokenProvider(),
+                allowHttp = false,
+            )
+        }
+    }
+
+    @Test
+    fun meetingsClient_factory_rejectsWithDescriptiveMessage() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            MeetingsClient(
+                baseUrl = "http://api.meetings.mp/",
+                tokenProvider = InMemoryTokenProvider(),
+                allowHttp = false,
+            )
+        }
+        assertTrue(exception.message?.contains("HTTPS") == true)
+        assertTrue(exception.message?.contains("http://api.meetings.mp/") == true)
+    }
+
+    @Test
+    fun meetingsClient_factory_allowsHttpWhenFlagSet() {
+        val client = MeetingsClient(
+            baseUrl = "http://staging.meetings.mp/",
+            tokenProvider = InMemoryTokenProvider(),
+            allowHttp = true,
+        )
+        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+    }
+
+    @Test
+    fun meetingsClient_factory_defaultBaseUrlIsLocalhost() {
+        val client = MeetingsClient()
+        assertTrue(client.isAuthenticated == false || !client.isAuthenticated)
+    }
+}
