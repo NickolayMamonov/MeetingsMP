@@ -1,5 +1,6 @@
 package dev.whysoezzy.meetingssdk.network
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -34,7 +35,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CertificatePins(
+    @SerialName("pins")
     val pins: Map<String, List<String>> = emptyMap(),
+    @SerialName("enforcePins")
     val enforcePins: Boolean = true,
 ) {
     /**
