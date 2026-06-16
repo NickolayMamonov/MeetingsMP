@@ -189,6 +189,12 @@ private fun defaultHttpClient(
     expectedApiHost: String,
     baseUrl: String,
 ): HttpClient {
+    // Dedicated client for token refresh — reused across refresh calls
+    // to avoid creating a new HttpClient (and TLS handshake) on every 401.
+    val refreshClient = HttpClient {
+        install(ContentNegotiation) { json(json) }
+    }
+
     return HttpClient {
         install(ContentNegotiation) {
             json(json)
@@ -207,9 +213,9 @@ private fun defaultHttpClient(
 
                     try {
                         val response = authApiRefreshToken(
+                            client = refreshClient,
                             baseUrl = baseUrl,
                             refreshToken = oldRefreshToken,
-                            json = json,
                         )
                         val currentRefreshToken = tokenProvider.getRefreshToken() ?: oldRefreshToken
                         tokenProvider.saveTokens(
@@ -242,24 +248,20 @@ private fun defaultHttpClient(
  * This is needed because the Bearer plugin's refreshTokens block runs before
  * the Ktorfit instance is fully initialized, so we can't use [AuthApi] directly.
  *
+ * Uses a pre-configured [client] that is created once per [MeetingsClient]
+ * instance (see [defaultHttpClient]) and reused across refresh calls.
+ *
+ * @param client Dedicated [HttpClient] for token refresh (shared instance).
  * @param baseUrl Full base URL of the API server (e.g. "https://api.meetings.mp/").
  * @param refreshToken The refresh token to exchange for a new access token.
- * @param json JSON configuration for request serialization.
  */
 private suspend fun authApiRefreshToken(
+    client: HttpClient,
     baseUrl: String,
     refreshToken: String,
-    json: Json,
 ): RefreshTokenResponse {
-    val client = HttpClient {
-        install(ContentNegotiation) { json(json) }
-    }
-    try {
-        return client.post("${baseUrl.trimEnd('/')}/auth/refresh") {
-            contentType(ContentType.Application.Json)
-            setBody(RefreshTokenBody(refreshToken))
-        }.body<RefreshTokenResponse>()
-    } finally {
-        client.close()
-    }
+    return client.post("${baseUrl.trimEnd('/')}/auth/refresh") {
+        contentType(ContentType.Application.Json)
+        setBody(RefreshTokenBody(refreshToken))
+    }.body<RefreshTokenResponse>()
 }
