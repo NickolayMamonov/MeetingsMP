@@ -21,4 +21,8 @@ data class UIKitMeeting(
     val meetingStatus: UIKitStatus,
     val isUserInParticipants: Boolean,
     val capacity: Int,
+    val source: String,
+    val externalUrl: String?,
+    val isOnline: Boolean,
+    val hasLocation: Boolean,
 )

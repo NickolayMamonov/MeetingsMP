@@ -35,6 +35,9 @@ fun EventFull.toDomain(): Meeting =
         meetingStatus = status.toDomain(),
         isUserInParticipants = isRegistered,
         capacity = capacity ?: 0,
+        source = "TIMEPAD",
+        externalUrl = null,
+        isOnline = false,
     )
 
 private fun EventStatus.toDomain(): MeetingStatus = when (this) {

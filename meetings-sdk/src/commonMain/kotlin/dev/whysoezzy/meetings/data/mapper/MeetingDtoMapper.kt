@@ -79,6 +79,9 @@ fun MeetingDto.toDomain(): Meeting =
         meetingStatus = meetingStatus.toMeetingStatus(),
         isUserInParticipants = isUserInParticipants,
         capacity = capacity ?: 0,
+        source = source,
+        externalUrl = externalUrl,
+        isOnline = isOnline,
     )
 
 fun String.toMeetingStatus(): MeetingStatus =
