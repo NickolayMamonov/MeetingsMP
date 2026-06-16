@@ -7,7 +7,7 @@ import io.ktor.client.engine.okhttp.OkHttp
 import okhttp3.CertificatePinner
 
 /**
- * Android implementation of [createHttpClientEngine].
+ * JVM implementation of [createHttpClientEngine], shared by Android and Desktop.
  *
  * Uses the OkHttp engine with [CertificatePinner] when pins are provided
  * and [CertificatePins.enforcePins] is `true`.
