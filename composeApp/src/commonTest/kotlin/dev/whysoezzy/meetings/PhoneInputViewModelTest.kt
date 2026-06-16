@@ -6,12 +6,12 @@ import dev.whysoezzy.meetings.compose.viewmodel.PhoneInputViewModel
 import dev.whysoezzy.meetings.domain.repository.AuthRepository
 import dev.whysoezzy.meetings.domain.usecase.SendOtpUseCase
 import dev.whysoezzy.meetingssdk.models.AuthResponse
-import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
 import dev.whysoezzy.meetingssdk.models.UserProfile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
+@Suppress("FunctionNaming")
 class PhoneInputViewModelTest {
 
     @Test
@@ -53,24 +53,23 @@ class PhoneInputViewModelTest {
         assertEquals(null, viewModel.uiState.value.error)
     }
 
-    private fun createSendOtpUseCase(result: Result<RequestCodeResponse> = Result.success(
-        RequestCodeResponse(retryAfterSeconds = 30)
-    )): SendOtpUseCase {
+    private fun createSendOtpUseCase(
+        result: Result<Unit> = Result.success(Unit)
+    ): SendOtpUseCase {
         val repo = object : AuthRepository {
-            override suspend fun sendOtp(
-                phone: String,
-                firstName: String
-            ): Result<RequestCodeResponse> = result
+            override suspend fun sendOtp(phone: String): Result<Unit> = result
 
             override suspend fun verifyOtp(
                 phone: String,
-                code: String
+                code: String,
+                name: String?,
+                surname: String?,
             ): Result<AuthResponse> = Result.success(
                 AuthResponse(
-                    token = "test-token",
+                    accessToken = "test-access",
+                    refreshToken = "test-refresh",
                     user = UserProfile(id = "0", firstName = "Test"),
                     isNewUser = false,
-                    isRecovered = false,
                 )
             )
 
@@ -84,3 +83,4 @@ class PhoneInputViewModelTest {
         return SendOtpUseCase(repo)
     }
 }
+

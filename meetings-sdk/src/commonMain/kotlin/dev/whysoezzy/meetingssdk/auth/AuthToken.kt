@@ -1,11 +1,12 @@
 package dev.whysoezzy.meetingssdk.auth
 
-import kotlin.jvm.JvmInline
-
 /**
- * An inline value class wrapping a JWT bearer token for API authentication.
+ * Authentication token pair containing both access and refresh tokens.
  *
- * @property token The raw JWT token string.
+ * @property accessToken JWT access token for API authentication (7-day lifetime).
+ * @property refreshToken UUID refresh token for obtaining new access tokens (30-day lifetime).
  */
-@JvmInline
-value class AuthToken(val token: String)
+data class AuthToken(
+    val accessToken: String,
+    val refreshToken: String,
+)

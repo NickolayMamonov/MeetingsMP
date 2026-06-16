@@ -4,51 +4,61 @@ import de.jensklingenberg.ktorfit.http.Body
 import de.jensklingenberg.ktorfit.http.POST
 import dev.whysoezzy.meetingssdk.models.AuthResponse
 import dev.whysoezzy.meetingssdk.models.RefreshTokenBody
-import dev.whysoezzy.meetingssdk.models.RequestCodeBody
-import dev.whysoezzy.meetingssdk.models.RequestCodeResponse
-import dev.whysoezzy.meetingssdk.models.VerifyCodeBody
+import dev.whysoezzy.meetingssdk.models.RefreshTokenResponse
+import dev.whysoezzy.meetingssdk.models.SendOtpBody
+import dev.whysoezzy.meetingssdk.models.VerifyOtpBody
 
 /**
  * Ktorfit API interface for authentication endpoints.
  *
  * Provides methods for phone-based authentication flow:
- * request code → verify code → refresh token → logout.
+ * send OTP → verify OTP → refresh token → logout.
+ *
+ * Endpoints follow the backend contract:
+ * - `auth/send-otp` — request a verification code
+ * - `auth/verify-otp` — verify the code and authenticate
+ * - `auth/refresh` — refresh an expired access token
+ * - `auth/logout` — invalidate the session
  */
 interface AuthApi {
 
     /**
-     * Request a verification code to be sent to the given phone number.
+     * Send a one-time password to the given phone number.
      *
-     * @param body Contains the phone number and first name.
-     * @return [RequestCodeResponse] with retry timing information.
+     * @param body Contains the phone number.
+     * @return Unit on success (the backend returns a simple confirmation).
      */
-    @POST("auth/request-code")
-    suspend fun requestCode(@Body body: RequestCodeBody): RequestCodeResponse
+    @POST("auth/send-otp")
+    suspend fun sendOtp(@Body body: SendOtpBody)
 
     /**
-     * Verify the code sent to the user's phone and complete authentication.
+     * Verify the OTP code sent to the user's phone and complete authentication.
      *
-     * @param body Contains the phone number and the received code.
-     * @return [AuthResponse] with the authentication token and user profile.
+     * On success, returns both access and refresh tokens along with the user profile.
+     *
+     * @param body Contains the phone number, code, and optional name/surname for new users.
+     * @return [AuthResponse] with access token, refresh token, and user profile.
      */
-    @POST("auth/verify-code")
-    suspend fun verifyCode(@Body body: VerifyCodeBody): AuthResponse
+    @POST("auth/verify-otp")
+    suspend fun verifyOtp(@Body body: VerifyOtpBody): AuthResponse
 
     /**
-     * Refresh the current authentication token.
+     * Refresh the access token using a valid refresh token.
      *
-     * Call this when the access token has expired to obtain a new one
-     * without requiring the user to re-authenticate.
+     * The refresh token is not rotated — the same UUID remains valid until
+     * its expiration (30 days) or explicit logout.
      *
-     * @param body Contains the current refresh token.
-     * @return [AuthResponse] with the new authentication token and user profile.
+     * @param body Contains the refresh token.
+     * @return [RefreshTokenResponse] with the new access token.
      */
     @POST("auth/refresh")
-    suspend fun refreshToken(@Body body: RefreshTokenBody): AuthResponse
+    suspend fun refreshToken(@Body body: RefreshTokenBody): RefreshTokenResponse
 
     /**
      * Log out the current user by invalidating the session on the server.
+     * Requires a valid access token in the Authorization header.
      */
     @POST("auth/logout")
     suspend fun logout()
 }
+

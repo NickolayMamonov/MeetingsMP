@@ -7,6 +7,5 @@ data class PhoneInputUiState(
     val firstName: String = "",
     val isLoading: Boolean = false,
     val error: ErrorType? = null,
-    val retryAfterSeconds: Int? = null,
     val codeSent: Boolean = false,
 )

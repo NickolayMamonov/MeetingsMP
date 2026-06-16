@@ -55,13 +55,12 @@ class PhoneInputViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            sendOtpUseCase(state.phone, state.firstName)
-                .onSuccess { response ->
+            sendOtpUseCase(state.phone)
+                .onSuccess {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             codeSent = true,
-                            retryAfterSeconds = response.retryAfterSeconds,
                         )
                     }
                     _navEvent.emit(AuthNavEvent.NavigateToCodeVerification)

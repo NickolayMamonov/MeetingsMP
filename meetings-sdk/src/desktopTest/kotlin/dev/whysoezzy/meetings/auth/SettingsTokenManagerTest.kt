@@ -1,122 +1,102 @@
 package dev.whysoezzy.meetings.auth
 
-import com.russhwolf.settings.MapSettings
-import dev.whysoezzy.meetings.common.crypto.CryptoHelper
 import dev.whysoezzy.meetingssdk.auth.AuthToken
 import dev.whysoezzy.meetingssdk.auth.SettingsTokenManager
+import dev.whysoezzy.meetingssdk.auth.TokenStorage
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-@Suppress("FunctionNaming", "TooManyFunctions")
+/**
+ * Tests for [SettingsTokenManager] using the Desktop [TokenStorage] implementation.
+ *
+ * The storage is cleared before each test to ensure clean test isolation
+ * regardless of leftover state from previous test runs.
+ */
+@Suppress("FunctionNaming")
 class SettingsTokenManagerTest {
 
-    companion object {
-        private const val LONG_TOKEN_LENGTH = 500
-    }
+    private val tokenStorage = TokenStorage()
+    private val tokenManager = SettingsTokenManager(tokenStorage)
 
-    private val settings = MapSettings()
-    private val cryptoHelper = CryptoHelper()
-    private val tokenManager = SettingsTokenManager(settings, cryptoHelper)
-
-    @Test
-    fun getToken_returnsNull_whenNoTokenStored() {
-        assertNull(tokenManager.getToken())
+    @BeforeTest
+    fun setUp() {
+        // Ensure clean state before each test
+        tokenStorage.clearTokens()
     }
 
     @Test
-    fun setToken_and_getToken_roundTripsSuccessfully() {
-        val token = AuthToken("test-jwt-token-12345")
-        tokenManager.setToken(token)
-
-        val retrieved = tokenManager.getToken()
-        assertNotNull(retrieved)
-        assertEquals("test-jwt-token-12345", retrieved.token)
+    fun getAccessToken_returnsNull_whenNoTokenStored() {
+        assertNull(tokenManager.getAccessToken())
     }
 
     @Test
-    fun setToken_storesEncryptedValue_inSettings() {
-        val token = AuthToken("my-secret-token")
-        tokenManager.setToken(token)
-
-        // The raw value in settings should NOT be the plain token
-        val rawValue = settings.getStringOrNull("auth_token_encrypted")
-        assertNotNull(rawValue)
-        assertFalse(rawValue!!.contains("my-secret-token"))
+    fun getRefreshToken_returnsNull_whenNoTokenStored() {
+        assertNull(tokenManager.getRefreshToken())
     }
 
     @Test
-    fun clear_removesTokenFromStorage() {
-        tokenManager.setToken(AuthToken("token-to-clear"))
-        assertNotNull(tokenManager.getToken())
+    fun saveTokens_and_getAccessToken_roundTripsSuccessfully() {
+        tokenManager.saveTokens(
+            AuthToken(accessToken = "test-access", refreshToken = "test-refresh")
+        )
 
-        tokenManager.clear()
-        assertNull(tokenManager.getToken())
+        assertEquals("test-access", tokenManager.getAccessToken())
+        assertEquals("test-refresh", tokenManager.getRefreshToken())
     }
 
     @Test
-    fun setToken_withNull_removesTokenFromStorage() {
-        tokenManager.setToken(AuthToken("token-to-nullify"))
-        assertNotNull(tokenManager.getToken())
+    fun clearTokens_removesBothTokens() {
+        tokenManager.saveTokens(
+            AuthToken(accessToken = "access-to-clear", refreshToken = "refresh-to-clear")
+        )
+        assertTrue(tokenManager.isLoggedIn.value)
 
-        tokenManager.setToken(null)
-        assertNull(tokenManager.getToken())
+        tokenManager.clearTokens()
+        assertNull(tokenManager.getAccessToken())
+        assertNull(tokenManager.getRefreshToken())
+        assertFalse(tokenManager.isLoggedIn.value)
     }
 
     @Test
-    fun setToken_overwritesPreviousToken() {
-        tokenManager.setToken(AuthToken("first-token"))
-        assertEquals("first-token", tokenManager.getToken()!!.token)
+    fun saveTokens_overwritesPreviousTokens() {
+        tokenManager.saveTokens(
+            AuthToken(accessToken = "first-access", refreshToken = "first-refresh")
+        )
+        assertEquals("first-access", tokenManager.getAccessToken())
 
-        tokenManager.setToken(AuthToken("second-token"))
-        assertEquals("second-token", tokenManager.getToken()!!.token)
+        tokenManager.saveTokens(
+            AuthToken(accessToken = "second-access", refreshToken = "second-refresh")
+        )
+        assertEquals("second-access", tokenManager.getAccessToken())
     }
 
     @Test
-    fun getToken_handlesLongTokenSuccessfully() {
-        val longToken = "a".repeat(LONG_TOKEN_LENGTH)
-        tokenManager.setToken(AuthToken(longToken))
-
-        val retrieved = tokenManager.getToken()
-        assertNotNull(retrieved)
-        assertEquals(longToken, retrieved.token)
+    fun isLoggedIn_reflectsTokenState() {
+        assertFalse(tokenManager.isLoggedIn.value)
+        tokenManager.saveTokens(AuthToken(accessToken = "a", refreshToken = "r"))
+        assertTrue(tokenManager.isLoggedIn.value)
+        tokenManager.clearTokens()
+        assertFalse(tokenManager.isLoggedIn.value)
     }
 
     @Test
-    fun getToken_handlesSpecialCharactersInToken() {
-        val specialToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc123!@#$%"
-        tokenManager.setToken(AuthToken(specialToken))
-
-        val retrieved = tokenManager.getToken()
-        assertNotNull(retrieved)
-        assertEquals(specialToken, retrieved.token)
+    fun saveTokens_updatesIsLoggedIn_toTrue() {
+        assertFalse(tokenManager.isLoggedIn.value)
+        tokenManager.saveTokens(AuthToken(accessToken = "a", refreshToken = "r"))
+        assertTrue(tokenManager.isLoggedIn.value)
     }
 
     @Test
-    fun multipleTokenManagers_withSameSettings_shareState() {
-        val sharedSettings = MapSettings()
-        val manager1 = SettingsTokenManager(sharedSettings, CryptoHelper())
-        val manager2 = SettingsTokenManager(sharedSettings, CryptoHelper())
-
-        manager1.setToken(AuthToken("shared-token"))
-        assertEquals("shared-token", manager2.getToken()!!.token)
+    fun clearTokens_updatesIsLoggedIn_toFalse() {
+        tokenManager.saveTokens(AuthToken(accessToken = "a", refreshToken = "r"))
+        assertTrue(tokenManager.isLoggedIn.value)
+        tokenManager.clearTokens()
+        assertFalse(tokenManager.isLoggedIn.value)
     }
-
-    @Test
-    fun isLoggedIn_returnsFalse_whenNoToken() {
-        assertFalse(tokenManager.isLoggedIn())
-    }
-
-    @Test
-    fun isLoggedIn_returnsTrue_whenTokenExists() {
-        tokenManager.setToken(AuthToken("valid-token"))
-        assertTrue(tokenManager.isLoggedIn())
-    }
-
-    private fun SettingsTokenManager.isAuthenticated(): Boolean = getToken() != null
-
-    private fun SettingsTokenManager.isLoggedIn(): Boolean = isAuthenticated()
 }
+
+

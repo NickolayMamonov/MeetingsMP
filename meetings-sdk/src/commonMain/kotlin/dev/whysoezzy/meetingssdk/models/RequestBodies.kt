@@ -4,27 +4,49 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Request body for sending an authentication code to a phone number.
+ * Request body for sending an OTP code to a phone number.
  *
  * @property phone Phone number to send the code to.
- * @property firstName User's first name for registration purposes.
  */
 @Serializable
-data class RequestCodeBody(
+data class SendOtpBody(
     val phone: String,
-    @SerialName("firstName") val firstName: String
 )
 
 /**
- * Request body for verifying a code sent to the user's phone.
+ * Request body for verifying an OTP code sent to the user's phone.
  *
  * @property phone Phone number that received the code.
  * @property code The verification code to validate.
+ * @property name User's first name (for new user registration, optional).
+ * @property surname User's surname (for new user registration, optional).
  */
 @Serializable
+data class VerifyOtpBody(
+    val phone: String,
+    val code: String,
+    val name: String? = null,
+    val surname: String? = null,
+)
+
+/**
+ * @deprecated Use [SendOtpBody] instead. Kept for backward compatibility.
+ */
+@Serializable
+@Deprecated("Use SendOtpBody instead", ReplaceWith("SendOtpBody"))
+data class RequestCodeBody(
+    val phone: String,
+    @SerialName("firstName") val firstName: String,
+)
+
+/**
+ * @deprecated Use [VerifyOtpBody] instead. Kept for backward compatibility.
+ */
+@Serializable
+@Deprecated("Use VerifyOtpBody instead", ReplaceWith("VerifyOtpBody"))
 data class VerifyCodeBody(
     val phone: String,
-    val code: String
+    val code: String,
 )
 
 /**
@@ -34,7 +56,7 @@ data class VerifyCodeBody(
  */
 @Serializable
 data class UpdateInterestsBody(
-    @SerialName("interestsIds") val interestsIds: List<String>
+    @SerialName("interestsIds") val interestsIds: List<String>,
 )
 
 /**
@@ -57,7 +79,7 @@ data class UpdateUserBody(
     @SerialName("showCommunities") val showCommunities: Boolean? = null,
     @SerialName("showEvents") val showEvents: Boolean? = null,
     @SerialName("notificationEnabled") val notificationsEnabled: Boolean? = null,
-    @SerialName("socialLinks") val socialLinks: List<SocialLink>? = null
+    @SerialName("socialLinks") val socialLinks: List<SocialLink>? = null,
 )
 
 /**
@@ -73,11 +95,11 @@ data class DeviceTokenBody(
 )
 
 /**
- * Request body for refreshing an authentication token.
+ * Request body for refreshing an access token.
  *
- * @property token The current refresh token to exchange for a new access token.
+ * @property refreshToken The refresh token to exchange for a new access token.
  */
 @Serializable
 data class RefreshTokenBody(
-    val token: String,
+    val refreshToken: String,
 )

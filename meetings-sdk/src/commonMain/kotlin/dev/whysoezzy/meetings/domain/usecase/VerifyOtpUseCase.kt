@@ -6,7 +6,7 @@ import dev.whysoezzy.meetingssdk.models.AuthResponse
 /**
  * Use case for verifying a one-time password (OTP) and completing authentication.
  *
- * On success, the auth token is automatically persisted by the repository.
+ * On success, both access and refresh tokens are automatically persisted by the repository.
  */
 class VerifyOtpUseCase(
     private val authRepository: AuthRepository,
@@ -16,9 +16,17 @@ class VerifyOtpUseCase(
      *
      * @param phone Phone number that received the code.
      * @param code The verification code to validate.
-     * @return [Result] with [AuthResponse] containing the token and user profile,
+     * @param name Optional first name for new user registration.
+     * @param surname Optional surname for new user registration.
+     * @return [Result] with [AuthResponse] containing the tokens and user profile,
      *   or a failure with the appropriate error.
      */
-    suspend operator fun invoke(phone: String, code: String): Result<AuthResponse> =
-        authRepository.verifyOtp(phone, code)
+    suspend operator fun invoke(
+        phone: String,
+        code: String,
+        name: String? = null,
+        surname: String? = null,
+    ): Result<AuthResponse> =
+        authRepository.verifyOtp(phone, code, name, surname)
 }
+
