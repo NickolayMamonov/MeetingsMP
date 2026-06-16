@@ -22,20 +22,20 @@ actual class CryptoHelper actual constructor() {
     }
 
     actual fun encrypt(plaintext: String): String {
-        val keyBytes = OBFUSCATION_KEY.toByteArray(Charsets.UTF_8)
-        val plainBytes = plaintext.toByteArray(Charsets.UTF_8)
+        val keyBytes = OBFUSCATION_KEY.encodeToByteArray()
+        val plainBytes = plaintext.encodeToByteArray()
         val encrypted = ByteArray(plainBytes.size) { i ->
             (plainBytes[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
-        return encrypted.joinToString("") { "%02x".format(it) }
+        return encrypted.joinToString("") { (it.toInt() and 0xFF).toString(16).padStart(2, '0') }
     }
 
     actual fun decrypt(ciphertext: String): String {
-        val keyBytes = OBFUSCATION_KEY.toByteArray(Charsets.UTF_8)
+        val keyBytes = OBFUSCATION_KEY.encodeToByteArray()
         val encrypted = ciphertext.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
         val decrypted = ByteArray(encrypted.size) { i ->
             (encrypted[i].toInt() xor keyBytes[i % keyBytes.size].toInt()).toByte()
         }
-        return String(decrypted, Charsets.UTF_8)
+        return decrypted.decodeToString()
     }
 }

@@ -34,6 +34,10 @@ fun Meeting.toUIKit(): UIKitMeeting = UIKitMeeting(
     meetingStatus = meetingStatus.toUIKit(),
     isUserInParticipants = isUserInParticipants,
     capacity = capacity,
+    source = source,
+    externalUrl = externalUrl,
+    isOnline = isOnline,
+    hasLocation = hasLocation,
 )
 
 fun MeetingAddress.toUIKit(): UIKitAddress = UIKitAddress(

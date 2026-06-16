@@ -106,6 +106,9 @@ fun EventShort.toDomain(): Meeting =
         meetingStatus = dev.whysoezzy.meetings.domain.models.MeetingStatus.ACTIVE,
         isUserInParticipants = false,
         capacity = 0,
+        source = "TIMEPAD",
+        externalUrl = null,
+        isOnline = false,
     )
 
 /**

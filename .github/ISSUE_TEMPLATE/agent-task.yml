@@ -102,5 +102,6 @@ body:
         - [ ] Тесты реальны и покрывают изменение
         - [ ] Нет хардкода строк/цветов/URL, нет отладочного кода
         - [ ] PR ссылается на этот Issue (Closes #), ревью пройдено
+        - [ ] Android smoke из docs/smoke/android-smoke.md прошёл на устройстве (или smoke: N/A для не-UI задач)
     validations:
       required: false

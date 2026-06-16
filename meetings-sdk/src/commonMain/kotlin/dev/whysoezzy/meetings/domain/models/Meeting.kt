@@ -15,7 +15,12 @@ data class Meeting(
     val meetingStatus: MeetingStatus,
     val isUserInParticipants: Boolean,
     val capacity: Int,
-)
+    val source: String,
+    val externalUrl: String?,
+    val isOnline: Boolean,
+) {
+    val hasLocation: Boolean get() = !isOnline && address.latitude != 0.0 && address.longitude != 0.0
+}
 
 data class MeetingAddress(
     val address: String,
