@@ -25,11 +25,6 @@ kotlin {
             implementation(libs.multiplatform.settings.test)
         }
 
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.core)
-        }
-
         androidMain.dependencies {
             implementation(libs.ktor.client.engine.okhttp)
         }
