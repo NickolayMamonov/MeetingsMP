@@ -1,10 +1,5 @@
-import dev.whysoezzy.meetings.gradle.kmplibbase.androidConfig
 import dev.whysoezzy.meetings.gradle.kmplibbase.applyIfNeeded
-import dev.whysoezzy.meetings.gradle.kmplibbase.config.IOSPlatform
-import dev.whysoezzy.meetings.gradle.kmplibbase.jvmTarget
 import dev.whysoezzy.meetings.gradle.kmplibbase.kmpConfig
-import dev.whysoezzy.meetings.gradle.kmplibbase.config.kmpIosPlatforms
-import dev.whysoezzy.meetings.gradle.kmplibbase.libs
 
 plugins.applyIfNeeded("kmp.library.desktop")
 plugins.applyIfNeeded("kmp.library.android")
@@ -30,8 +25,9 @@ plugins.applyIfNeeded("kmp.library.ios")
  * when targets are registered via separate convention plugins (due to
  * `applyIfNeeded` timing). We create it manually here.
  *
- * `nativeMain` and `iosMain` are also created manually because the default
- * hierarchy template may not run before this configuration block.
+ * `nativeMain` is created for future shared native code (currently has no
+ * source files). It serves as the intermediate source set between
+ * `commonMain` and `iosMain`, preserving the standard KMP hierarchy.
  */
 afterEvaluate {
     kmpConfig {
