@@ -24,24 +24,30 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.multiplatform.settings.test)
         }
+    }
+}
 
-        androidMain.dependencies {
-            implementation(libs.ktor.client.engine.okhttp)
-        }
+// Source sets created by the convention plugin's afterEvaluate block
+// (jvmMain, iosMain, desktopTest) are only available after the hierarchy
+// is configured. We use afterEvaluate here to access them.
+afterEvaluate {
+    kotlin {
+        sourceSets {
+            val jvmMain by getting
+            jvmMain.dependencies {
+                implementation(libs.ktor.client.engine.okhttp)
+            }
 
-        val desktopMain by getting
-        desktopMain.dependencies {
-            implementation(libs.ktor.client.engine.okhttp)
-        }
+            val iosMain by getting
+            iosMain.dependencies {
+                implementation(libs.ktor.client.engine.darwin)
+            }
 
-        val desktopTest by getting
-        desktopTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.swing)
-        }
-
-        iosMain.dependencies {
-            implementation(libs.ktor.client.engine.darwin)
+            val desktopTest by getting
+            desktopTest.dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.swing)
+            }
         }
     }
 }
