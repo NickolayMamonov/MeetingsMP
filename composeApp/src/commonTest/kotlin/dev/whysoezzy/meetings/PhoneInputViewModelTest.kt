@@ -20,7 +20,6 @@ class PhoneInputViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("", state.phone)
-        assertEquals("", state.firstName)
         assertFalse(state.isLoading)
         assertEquals(null, state.error)
         assertFalse(state.codeSent)
@@ -33,15 +32,6 @@ class PhoneInputViewModelTest {
         viewModel.onEvent(PhoneInputEvent.PhoneChanged("+79123456789"))
 
         assertEquals("+79123456789", viewModel.uiState.value.phone)
-    }
-
-    @Test
-    fun `firstName changed updates firstName in state`() {
-        val viewModel = PhoneInputViewModel(createSendOtpUseCase())
-
-        viewModel.onEvent(PhoneInputEvent.FirstNameChanged("Ivan"))
-
-        assertEquals("Ivan", viewModel.uiState.value.firstName)
     }
 
     @Test
@@ -83,4 +73,3 @@ class PhoneInputViewModelTest {
         return SendOtpUseCase(repo)
     }
 }
-

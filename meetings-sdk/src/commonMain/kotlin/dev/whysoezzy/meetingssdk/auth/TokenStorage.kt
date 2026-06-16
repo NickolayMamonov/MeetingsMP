@@ -3,11 +3,11 @@ package dev.whysoezzy.meetingssdk.auth
 /**
  * Platform-specific secure token storage.
  *
- * Provides encrypted persistence for access and refresh tokens using
- * the most secure mechanism available on each platform:
- * - **Android**: EncryptedSharedPreferences (AES-256 via AndroidKeyStore)
- * - **iOS**: Keychain Services (kSecAttrAccessibleWhenUnlockedThisDeviceOnly)
- * - **Desktop**: Encrypted file with OS-derived key (fallback when native API unavailable)
+ * Provides obfuscated or encrypted persistence for access and refresh tokens
+ * using platform-appropriate mechanisms:
+ * - **Android**: XOR obfuscated SharedPreferences (planned: EncryptedSharedPreferences)
+ * - **iOS**: XOR obfuscated NSUserDefaults (planned: Keychain Services)
+ * - **Desktop**: AES-GCM encrypted file with OS-derived key
  *
  * @param platformContext Platform-specific context. On Android, this must be a `android.content.Context`.
  *                        On iOS and Desktop, this parameter is ignored and can be `null`.

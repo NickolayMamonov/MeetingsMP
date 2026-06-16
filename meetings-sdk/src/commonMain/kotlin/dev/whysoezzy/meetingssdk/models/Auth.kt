@@ -6,9 +6,14 @@ import kotlinx.serialization.Serializable
 /**
  * Response after requesting a verification code.
  *
+ * @deprecated The /auth/request-code endpoint has been replaced by /auth/send-otp.
+ *   Use the new [AuthResponse] flow instead. This class is kept for backward
+ *   compatibility with the old backend contract and will be removed in a future version.
+ *
  * @property retryAfterSeconds Number of seconds the client should wait before requesting a new code.
  */
 @Serializable
+@Deprecated("Use AuthResponse via /auth/send-otp + /auth/verify-otp instead")
 data class RequestCodeResponse(
     @SerialName("retryAfterSeconds") val retryAfterSeconds: Int
 )

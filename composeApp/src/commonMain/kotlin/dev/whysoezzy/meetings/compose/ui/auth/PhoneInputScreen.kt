@@ -26,8 +26,8 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Phone number input screen — first step of the auth flow.
  *
- * Allows the user to enter their phone number and first name,
- * then sends an OTP code for verification.
+ * Collects the user's phone number and sends an OTP code for verification.
+ * First name is collected in the separate [NameInputScreen] step.
  *
  * @param navController Navigation controller for routing.
  * @param viewModel ViewModel managing phone input state.
@@ -76,17 +76,6 @@ fun PhoneInputScreen(
         Spacer(modifier = Modifier.height(SpacingTokens.large))
 
         UIKitInput(
-            value = uiState.firstName,
-            onValueChange = { viewModel.onEvent(PhoneInputEvent.FirstNameChanged(it)) },
-            label = "Имя",
-            placeholder = "Введите ваше имя",
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Spacer(modifier = Modifier.height(SpacingTokens.medium))
-
-        UIKitInput(
             value = uiState.phone,
             onValueChange = { viewModel.onEvent(PhoneInputEvent.PhoneChanged(it)) },
             label = "Телефон",
@@ -109,7 +98,7 @@ fun PhoneInputScreen(
         UIKitButton(
             text = "Получить код",
             onClick = { viewModel.onEvent(PhoneInputEvent.SendCode) },
-            enabled = uiState.phone.isNotBlank() && uiState.firstName.isNotBlank() && !uiState.isLoading,
+            enabled = uiState.phone.isNotBlank() && !uiState.isLoading,
             loading = uiState.isLoading,
             modifier = Modifier.fillMaxWidth(),
         )

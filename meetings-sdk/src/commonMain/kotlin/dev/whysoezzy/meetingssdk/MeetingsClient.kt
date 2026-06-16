@@ -120,16 +120,17 @@ class MeetingsClient internal constructor(
      * Note: The refresh token itself is not rotated — the same UUID remains
      * valid until its expiration (30 days) or explicit logout.
      *
-     * @return The new access token string.
-     * @throws IllegalStateException if no refresh token is available.
+     * @return [Result.success] with the new access token string,
+     *   or [Result.failure] wrapping an [IllegalStateException] if no
+     *   refresh token is available.
      */
-    suspend fun refreshAccessToken(): String {
+    suspend fun refreshAccessToken(): Result<String> {
         val refreshToken = tokenProvider.getRefreshToken()
-            ?: error("No refresh token available for refresh")
+            ?: return Result.failure(IllegalStateException("No refresh token available for refresh"))
         val response = auth.refreshToken(RefreshTokenBody(refreshToken))
         val currentRefreshToken = tokenProvider.getRefreshToken() ?: refreshToken
         tokenProvider.saveTokens(AuthToken(response.accessToken, currentRefreshToken))
-        return response.accessToken
+        return Result.success(response.accessToken)
     }
 
     /** Whether the client has a stored access token. */
