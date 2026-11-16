@@ -1,3 +1,4 @@
 # Meetings Docs
 
-TODO Add links to docs
+- [Технические правила проекта](../AGENTS.md)
+- [Android smoke-сценарии](smoke/android-smoke.md)

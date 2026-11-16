@@ -1,191 +1,128 @@
-# AGENTS.md — правила работы агентов в MeetingsMP
+# Технические правила MeetingsMP
 
-Этот файл читают все агенты opencode (plan / build / review). Правила обязательны.
-Пакет проекта: `dev.whysoezzy.meetings`. Сборка: Gradle + convention plugins (`gradle/conventions-plugins`).
+Пакет приложения: `dev.whysoezzy.meetings`.
+Сборка: Gradle и convention plugins в `gradle/conventions-plugins`.
+Этот документ фиксирует ограничения проекта, а не настройки инструментов разработки.
 
-## §N Контракт агрегатора и web-таргета (нерушимо)
+## Архитектурные границы
 
-### Агрегатор (клиент — потребитель внешних событий)
-- Формат `MeetingDto` (`time: Long` + `date: String`) НЕ ломать. Новые поля — только аддитивно.
-- Внешние (Timepad) события: user-generated поля (host/community/capacity/participants) могут быть
-  пустыми. UI обязан корректно рендерить их отсутствие, не падать и не показывать заглушки-мусор.
-- Карта/адрес показываются ТОЛЬКО при `hasLocation = !isOnline && lat != 0.0 && lng != 0.0`.
-  Для онлайн-событий и событий без координат блок карты скрыт.
-- Регистрация на событие = переход по `externalUrl` (внешняя страница), не внутренняя запись.
-- `YANDEX_MAPKIT_API_KEY` только из `local.properties` через `buildConfigField`. Ключ не коммитится,
-  `local.properties` в `.gitignore`.
+- `meetings-sdk` — переносимые domain/data: модели, DTO, мапперы, API,
+  repository contracts/implementations, use cases и общие утилиты.
+- `composeApp` — общие ViewModel, состояние, навигация и Compose-экраны.
+- `core:uikit` — общие UI-компоненты;
+  namespace `dev.whysoezzy.meetings.compose`.
+- `meetings-android`, `meetings-desktop`, `iosApp` и будущая Web-точка входа —
+  тонкие платформенные оболочки, без дублирования бизнес-логики.
+- `meetings-shared` — iOS framework-агрегатор. Новый миграционный domain/data
+  код туда не добавляется; его build-файл ради такого переноса не меняется.
+- Перенос из Meeting Android выполняется в `meetings-sdk`, а не
+  `meetings-shared`. ViewModel и экраны размещаются в `composeApp`.
+- Общий код находится в `commonMain`. Android/JVM/Apple/browser APIs —
+  в соответствующих platform source sets, за необходимыми контрактами.
+  Не вводить нелегальные зависимости между фичами и слоями.
+- Targets и общие build-настройки подключаются через существующие
+  convention plugins, без дублирования в build-файлах модулей.
 
-### Web / wasmJs-таргет
-- Любая зависимость в `commonMain` обязана поддерживать ВСЕ заявленные таргеты, включая `wasmJs`.
-  Перед добавлением — сверить wasmJs-совместимость (koin, ktor/ktorfit+KSP, multiplatform-settings).
-  KSP-процессоры особенно рискованны на wasmJs.
-- Платформенное (Yandex MapKit на Android и т.п.) — за `expect`/`actual` или в leaf source set,
-  НИКОГДА в `commonMain`. Web-версия карты — отдельная `actual`, не общий код.
+Пакеты переносимого кода:
 
-## 1. Главный принцип
+- Domain: `dev.whysoezzy.meetings.domain.*`.
+- Общие утилиты: `dev.whysoezzy.meetings.common.*`.
+- DTO/API: `dev.whysoezzy.meetingssdk.models` и
+  `dev.whysoezzy.meetingssdk.api`.
+- Presentation: существующие пакеты `dev.whysoezzy.meetings.*`.
 
-Доверяем не агенту, а **объективному гейту**. Любое утверждение «работает» должно быть
-подтверждено машинно: зелёный CI, прошедший тест, golden-дифф, exit-код. «Выглядит правильно»
-без проверки — не аргумент.
+## Платформенная совместимость
 
-## 2. Изоляция (нерушимо)
+Продуктовые targets: Android, iOS, Desktop и Web (`wasmJs`).
+Наличие target в требованиях не означает, что он уже подключён в сборке.
 
-- Одна задача = один GitHub Issue = одна ветка `feature/<issue>-<slug>` = один git worktree = одна сессия.
-- Агенты **не делят** рабочее дерево и общаются только через git/PR. Никакого общего runtime-состояния.
-- Не трогать чужие ветки и незакреплённые за задачей файлы.
+Любая зависимость или генератор в `commonMain` должны поддерживать все
+потребляющие targets, включая Web. До добавления проверять совместимость
+Koin, Ktor/Ktorfit, KSP и settings с нужными targets.
+Платформенные SDK карт и другие native APIs не помещаются в `commonMain`.
+Общий контракт требует реализаций на всех затронутых платформах.
 
-## 3. Процесс задачи
+## Данные встреч и внешние события
 
-1. **Plan** (агент `plan`): прочитать Issue, составить план по шагам, согласовать. Код не менять.
-2. **Build** (агент `build`): реализовать строго по плану, шаг за шагом. На каждый шаг —
-   структурный чеклист затронутых файлов перед правкой. Реализация полная, без TODO-заглушек.
-3. Прогнать локальный гейт (см. §6) до коммита.
-4. Открыть PR со ссылкой на Issue. Заполнить, что и как проверено (артефакты).
-5. **Review** (агент `review`): кросс-модельное ревью, только чтение.
-6. Мерж — **только человек** после зелёного CI и аппрува (CODEOWNERS).
+Контракт `MeetingDto` не ломать: поля не удалять и не переименовывать.
+Новые поля добавлять аддитивно с дефолтами.
+Сохраняются `time: Long`, `date: String`, а также:
 
-## 4. Запрещено агентам
-
-- **Self-merge**: агент никогда не мержит свой PR и не пушит в `main`/`develop` напрямую.
-- `git push --force` / `-f` в любые ветки.
-- Менять конфиг CI, branch protection, секреты без явной отдельной задачи.
-- Трогать проект «Meeting» (Android-only) — он вне этого репозитория и не редактируется.
-
-## 5. Архитектурные границы (нарушение = красный CI)
-
-Модули и их роли:
-
-- `meetings-shared`, `meetings-sdk` — бизнес-логика и данные. Максимум кода живёт в `commonMain`.
-- `core:uikit` — общие UI-компоненты Compose (namespace `dev.whysoezzy.meetings.compose`).
-- `composeApp` — общий слой приложения.
-- `meetings-android`, `meetings-desktop`, `iosApp` (+ будущий web) — **тонкие** точки входа на платформу.
-
-Правила:
-- Бизнес-логику не класть в платформенные модули и не дублировать между ними.
-- Новый общий код — в `commonMain` соответствующего модуля, а не в `androidMain`/`desktopMain`,
-  если он не платформенно-специфичен.
-- Не вводить нелегальные зависимости между фичами/слоями. Если сомневаешься — спроси в Plan-фазе.
-- Подключение таргетов — только через существующие convention plugins
-  (`kmp.library.*`, `jetbrains-compose.*`), не дублировать конфиг в build-файлах модулей.
-
-### 5a. Миграция из Meeting Android — куда класть код
-
-Весь код, переносимый из Meeting Android (https://github.com/NickolayMamonov/Meeting),
-размещается в **meetings-sdk** (НЕ в meetings-shared).
-
-| Тип кода | Куда (meetings-sdk) | Пакет |
-|----------|---------------------|-------|
-| Domain-модели | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetings.domain.models` |
-| Утилиты / ErrorType / CrashReporter | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetings.common.*` |
-| DTO / мапперы | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetingssdk.models` |
-| API-интерфейсы / Ktor-клиенты | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetingssdk.api` |
-| UseCases / Repository-интерфейсы | `meetings-sdk/src/commonMain/` | `dev.whysoezzy.meetings.domain.*` |
-| ViewModel-ы | `composeApp/src/commonMain/` | `dev.whysoezzy.meetings.*.presentation` |
-| Composable-экраны | `composeApp/src/commonMain/` | `dev.whysoezzy.meetings.*.presentation` |
-
-**Почему не meetings-shared:** модуль meetings-shared содержит только iOS-таргет
-(iosMain). У него нет desktop-таргета, поэтому `desktopTest` и `compileKotlinDesktop`
-для него недоступны. meetings-sdk имеет все таргеты (android, desktop, ios).
-
-**Платформенно-специфичный код (expect/actual):**
-- `expect` — в `meetings-sdk/src/commonMain/`
-- `actual` (Android) — в `meetings-sdk/src/androidMain/`
-- `actual` (Desktop) — в `meetings-sdk/src/desktopMain/`
-- `actual` (iOS) — в `meetings-sdk/src/iosMain/`
-
-**Не редактировать meetings-shared/build.gradle.kts** — миграционный код туда не кладётся.
-
-## 6. Локальный гейт перед коммитом
-
-Запускать и добиваться зелёного:
-
+```text
+id, imageUrl, title, description,
+address { address, latitude, longitude },
+capacity, tags [{ id, text }], personHost?, communityHost?,
+participants[], meetingStatus, isUserInParticipants,
+source, externalUrl?, isOnline
 ```
+
+Для внешних событий (`source = "TIMEPAD"`) hosts могут быть `null`,
+participants — пустыми, capacity — `0` или отсутствовать по API-контракту.
+UI не должен падать или показывать мусорные заглушки.
+
+Карта/адрес отображаются только при
+`!isOnline && address.latitude != 0.0 && address.longitude != 0.0`.
+Регистрация на внешнее событие открывает `externalUrl`, а не вызывает
+внутренний join.
+
+## Авторизация и секреты
+
+Зафиксированный в этом репозитории OTP-контракт:
+`auth/send-otp` → `auth/verify-otp`, обновление через `auth/refresh`.
+Смену этого контракта согласовывать с актуальным backend до реализации;
+старые документы или другой клиент не являются разрешением на скрытый
+breaking change.
+
+Не публиковать токены, OTP, приватные данные, подписи и секреты.
+`local.properties` не коммитится. Если используется
+`YANDEX_MAPKIT_API_KEY`, он поступает из `local.properties` через
+`buildConfigField`, а не из исходников.
+
+## Изоляция и доставка
+
+- Одна задача — один GitHub Issue, ветка `feature/<issue>-<slug>` и worktree.
+  Не делить рабочее дерево между независимыми задачами.
+- Сначала согласовывать план изменений; сохранять публичные контракты,
+  UX и архитектурные границы вне явно согласованного объёма.
+- Не менять чужие ветки и незакоммиченные файлы.
+- Android-only репозиторий Meeting — источник для чтения, не область правок.
+- Не менять CI, branch protection и секреты без явной отдельной задачи.
+- Не пушить напрямую в `main`/`develop`, не использовать force-push.
+- PR ссылается на Issue и содержит фактические проверки и ограничения.
+  Мерж выполняет человек после CI и необходимых approvals.
+- Коммиты — Conventional Commits, со ссылкой `Closes #<issue>` в теле.
+  Не оставлять TODO-заглушки, отладочный вывод и закомментированный код.
+
+## Проверки
+
+Утверждение о работоспособности подтверждается тестом, сборкой, runtime
+сценарием или CI на проверяемой ревизии. Непройденное или заблокированное
+не считается успешным.
+
+Локальный гейт для изменений кода:
+
+```text
 ./gradlew detekt
-./gradlew :meetings-shared:allTests   # commonTest бизнес-логики
+./gradlew :meetings-shared:allTests
 ./gradlew :core:uikit:testDebugUnitTest
-./gradlew assembleDebug                # сборка Android-таргета
+./gradlew assembleDebug
 ```
 
-Для UI-изменений добавить/обновить Roborazzi golden и приложить дифф к PR.
-Не коммитить при красном detekt или падающих тестах.
+Перед использованием проверять наличие задач и их покрытие в текущем build
+graph. Если обязательная задача недоступна, фиксировать блокировку и
+согласовывать исправление гейта, а не пропускать его молча.
+iOS-агрегатор не заменяет тесты бизнес-логики `meetings-sdk`.
+Не коммитить при падающих тестах или detekt; внешние блокировки отражать явно.
 
-## 7. Тестирование (по убыванию объективности)
+Для затронутой общей логики нужны `commonTest` и проверки потребляющих
+targets. Для UI-изменений сохраняется требование добавить/обновить Roborazzi
+golden и приложить дифф к PR; отсутствие настроенного инструмента требует
+явного согласования корректировки гейта. Compose UI и device tests дополняют
+визуальную проверку по конфигурации проекта.
+Дизайн-спецификация нужна только при изменении UX в согласованном объёме.
+Ручная отладка не заменяет authoritative gate.
 
-1. `commonTest` — unit бизнес-логики (основной сигнал, дёшево, все таргеты).
-2. Compose `runComposeUiTest` + Roborazzi golden — UI-поведение и визуал.
-3. GMD (Gradle Managed Devices) — instrumented в CI.
-4. MCP `mobile` (claude-in-mobile) — глаза/руки во внутренней петле: рендер, тап, logcat, assert.
-   Это **вспомогательный** сигнal для отладки, **не** authoritative-гейт. Использует только агент `build`.
-
-Для стабильности device-тестов: `wait_for_element` вместо пауз, отключённые анимации,
-фиксированный locale, заранее засеянное состояние, одноразовый эмулятор.
-
-## 8. Дизайн (опционально)
-
-Только если Issue помечен `needs-design`: визуальная спека (прототип + скриншоты + design intent)
-лежит в Issue / `docs/design/`. Критерий приёмки — собранный Compose-экран совпадает с прототипом
-(сверка через Roborazzi golden). Перевод прототипа в Compose делает агент `build`.
-
-## §9 Контракт агрегатора и web-таргета (нерушимо)
-
-### Агрегатор (клиент — потребитель внешних событий)
-- Поля `MeetingDto` не переименовывать/не удалять. Новые — только аддитивно, с дефолтами.
-  Канон: id, imageUrl, title, description, time:Long, date:String,
-  address{address, latitude, longitude}, capacity, tags[{id,text}], personHost?, communityHost?,
-  participants[], meetingStatus, isUserInParticipants, source, externalUrl?, isOnline.
-- Внешние события (source="TIMEPAD"): personHost/communityHost = null, participants пуст,
-  capacity может быть 0. UI обязан рендерить это без падений и без заглушек-мусора.
-- Карта/адрес показываются ТОЛЬКО при hasLocation = !isOnline && address.latitude != 0.0
-  && address.longitude != 0.0. Иначе блок карты скрыт.
-- Регистрация на внешнее событие = открыть externalUrl, НЕ внутренний join.
-- Авторизация — OTP: /auth/send-otp → /auth/verify-otp, токены через /auth/refresh.
-- YANDEX_MAPKIT_API_KEY только из local.properties, не в гит.
-
-### Web / wasmJs-таргет
-- Любая зависимость в `commonMain` обязана поддерживать ВСЕ заявленные таргеты, включая `wasmJs`.
-  Перед добавлением — сверить wasmJs-совместимость (koin, ktor/ktorfit+KSP, multiplatform-settings).
-  KSP-процессоры особенно рискованны на wasmJs.
-- Платформенное (Yandex MapKit на Android и т.п.) — за `expect`/`actual` или в leaf source set,
-  НИКОГДА в `commonMain`. Web-версия карты — отдельная `actual`, не общий код.
-
-## 10. Модели и оркестрация
-
-### Агенты и их модели
-
-| Агент | Режим | Модель | Роль |
-|-------|-------|--------|------|
-| `orchestrator` | primary | GLM-5.1 | Автоматический цикл: координация plan → build → review → CI/CD → PR |
-| `plan` | all | GLM-5.1 | Анализ Issue и проектирование решения (read-only) |
-| `build` | all | DeepSeek V4 Flash | Реализация простых/средних задач |
-| `developer-complex` | subagent | DeepSeek V4 Pro | Реализация сложных задач (архитектура, expect/actual, новые модули) |
-| `review` | subagent | DeepSeek V4 Pro | Объективное ревью (другое семейство чем build/plan) |
-| `ci-cd` | subagent | DeepSeek V4 Flash | Локальный гейт + создание PR |
-
-`review` разведён с `build` по модели (Pro vs Flash) и с `plan` по семейству (DeepSeek vs GLM) —
-это максимум кросс-модельности из двух семейств. Используем только GLM и DeepSeek (через Go).
-
-### Автоматический цикл (orchestrator)
-
-При запуске `/cycle` или выборе агента `orchestrator`:
-
-1. **FETCH** — `gh issue list --label agent-task --state open` → выбрать Issue
-2. **PLAN** — `@plan` проектирует решение (если плана ещё нет в Issue)
-3. **BRANCH** — создать `feature/<issue>-<slug>`, изолировать через git worktree
-4. **BUILD** — сложные задачи → `@developer-complex`; простые → `@build`
-5. **REVIEW** — `@review` проверяет код; при замечаниях → возврат к build
-6. **CI/CD** — `@ci-cd` прогоняет гейт и создаёт PR
-7. **MERGE** — только человек (CODEOWNERS), не агент
-
-### Команды
-
-- `/cycle` — полный автоцикл: Issue → plan → code → review → CI/CD → PR
-- `/next-issue` — взять Issue и спроектировать (без кода)
-- `/implement` — реализовать текущую задачу (plan → code → гейт)
-- `/review` — ревью текущих изменений или PR
-- `/fix-review` — исправить замечания ревьюера
-- `/deploy` — CI/CD: гейт → PR
-
-### Стиль
-
-- Коммиты: Conventional Commits, на русском или английском, в теле — `Closes #<issue>`.
-- Комментарии в коде по необходимости; не оставлять закомментированный код и отладочный вывод.
+Device-тесты должны использовать ожидание состояния вместо фиксированных
+пауз, фиксированные locale/fixtures и контролируемое состояние устройства.
+Android/JVM pass не подтверждает iOS/Web runtime; отсутствующие SDK/runner
+и непроверенные платформы отмечаются как ограничения.
