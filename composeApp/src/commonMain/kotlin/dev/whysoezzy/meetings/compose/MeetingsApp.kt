@@ -1,8 +1,17 @@
 package dev.whysoezzy.meetings.compose
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import dev.whysoezzy.meetings.compose.di.AppGlueModule
+import dev.whysoezzy.meetings.compose.di.AppModule
+import dev.whysoezzy.meetings.compose.di.AuthFeatureModule
+import dev.whysoezzy.meetings.compose.di.AuthModule
+import dev.whysoezzy.meetings.compose.di.CommunitiesModule
+import dev.whysoezzy.meetings.compose.di.CommunityModule
+import dev.whysoezzy.meetings.compose.di.MainFeatureModule
+import dev.whysoezzy.meetings.compose.di.MeetingsDataModule
+import dev.whysoezzy.meetings.compose.di.ProfileFeatureModule
+import dev.whysoezzy.meetings.compose.di.ProfileModule
 import dev.whysoezzy.meetings.compose.di.meetingsModule
 import dev.whysoezzy.meetings.compose.theme.MeetingsTheme
 import dev.whysoezzy.meetings.compose.ui.navigation.MeetNavHost
@@ -20,10 +29,25 @@ import org.koin.compose.KoinApplication
 @Composable
 fun MeetingsApp(modifier: Modifier = Modifier) {
     KoinApplication(application = {
-        modules(meetingsModule)
-    }) {
+            modules(
+                // Data layer (repositories + SDK clients)
+                AppModule,
+                AuthModule,
+                MeetingsDataModule,
+                CommunitiesModule,
+                ProfileModule,
+                // Feature layer (use cases)
+                AuthFeatureModule,
+                MainFeatureModule,
+                CommunityModule,
+                ProfileFeatureModule,
+                AppGlueModule,
+                // Presentation layer (ViewModels)
+                meetingsModule,
+            )
+        }) {
         MeetingsTheme {
-            val navController = rememberMeetNavController(startRoute = MeetRoute.Splash)
+            val navController = rememberMeetNavController(startRoute = MeetRoute.MainScreen)
 
             MeetNavHost(
                 navController = navController,

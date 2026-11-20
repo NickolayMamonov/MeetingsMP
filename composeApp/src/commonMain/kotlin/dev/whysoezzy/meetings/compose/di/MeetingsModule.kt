@@ -1,6 +1,5 @@
 package dev.whysoezzy.meetings.compose.di
 
-import dev.whysoezzy.meetings.compose.viewmodel.AuthCheckViewModel
 import dev.whysoezzy.meetings.compose.viewmodel.CodeVerificationViewModel
 import dev.whysoezzy.meetings.compose.viewmodel.CommunityDetailsViewModel
 import dev.whysoezzy.meetings.compose.viewmodel.CommunitySubscribersViewModel
@@ -22,7 +21,7 @@ import org.koin.dsl.module
 val meetingsModule = module {
 
     // ── Auth ViewModels ────────────────────────────────────────
-    viewModelOf(::AuthCheckViewModel)
+    // AuthCheckViewModel is provided by AppGlueModule
     viewModelOf(::PhoneInputViewModel)
     viewModel { params ->
         CodeVerificationViewModel(
