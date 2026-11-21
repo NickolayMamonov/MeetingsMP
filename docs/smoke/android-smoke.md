@@ -20,14 +20,14 @@
 ## Launch smoke (обязателен для применимых Android-изменений)
 
 ### SM-0 — приложение устанавливается и запускается без аварии
-1. `install_app` → the debug APK path above
-2. `launch_app dev.whysoezzy.meetings`
-3. Установить фиксированную test locale `ru-RU`. Перед запуском очистить app
-   data и использовать signed-out состояние без сохранённых credentials.
-   Зафиксировать API, image/device profile, portrait orientation и выбранный
-   network state; сохранять их неизменными между повторами. Если проверке нужны
-   данные, использовать один и тот же версионированный sanitized fixture без
+1. До установки задать фиксированную test locale `ru-RU`, очистить app data и
+   использовать signed-out состояние без сохранённых credentials. Зафиксировать
+   API, image/device profile, portrait orientation и выбранный network state;
+   сохранять их неизменными между повторами. Если проверке нужны данные,
+   использовать один и тот же версионированный sanitized fixture без
    персональных данных.
+2. `install_app` → the debug APK path above
+3. `launch_app dev.whysoezzy.meetings`
 4. Ожидать ожидаемую foreground activity опросом состояния с ограничением 30 секунд.
    Фиксированная пауза не считается проверкой готовности.
 5. `get_current_activity` → подтвердить, что foreground activity принадлежит
