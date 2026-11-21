@@ -79,10 +79,10 @@ evidence. При изменении SHA или среды требуется с�
 | Проверка / target | SHA и runner | Assertion / результат | Evidence, владелец и условие продолжения |
 | --- | --- | --- | --- |
 | Документационная приемка MEE6-3 / все targets | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; точный final SHA и runner фиксируются в implementation evidence manifest | Проверить только три согласованных документа, ссылки, whitespace и согласованность. Product checks **N/A**: изменены только документы. | Точные команды, outcomes и final SHA находятся в implementation evidence manifest; автор реализации. |
-| Android product smoke | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; Windows 11 x64/JDK 21.0.10 обнаружены, device/emulator не подтверждён | Launch-only smoke по [Android smoke-сценарию](smoke/android-smoke.md): foreground activity за bounded timeout и отсутствие fatal/ANR. **BLOCKED** для отсутствующего device runner; проверка не запускалась. | Владелец: Android runner/QA. Возобновить при доступном device/emulator с контролируемым состоянием и записанным locale/API. |
+| Android product smoke | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; Windows 11 x64/JDK 21.0.10 обнаружены, device/emulator не подтверждён | Launch-only smoke по [Android smoke-сценарию](smoke/android-smoke.md): foreground activity за bounded timeout и отсутствие fatal/ANR. **BLOCKED** для отсутствующего device runner; проверка не запускалась. | Владелец: Android runner/QA. Возобновить при доступном device/emulator; использовать и записать фиксированный locale `ru-RU`, app-data reset/signed-out fixture, image/API/orientation/device profile и network state. |
 | Android/JVM Gradle checks | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; Windows 11 x64/JDK 21.0.10 | Discovery graph найден, но product build/tests не запускались. **UNRUN**. Ранее обнаружены запрос Kotlin serialization compiler plugin 2.3.20-RC3 при объявленном Kotlin 2.3.0 и timeout загрузки; это ограничение baseline, не PASS и не доказанный дефект продукта. | Требуются реальные exact-SHA task outcomes и reports на подходящем Android/JVM runner. Владелец: build/CI owner; продолжить при разрешённом dependency resolution и выполнении gates. |
 | iOS SDK/composeApp tests, framework и runtime | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; Windows host без Xcode/iOS simulator evidence | Gradle Apple tasks отключены на Windows, runtime не выполнялся. **BLOCKED**. Xcode embedAndSign integration также не проверена. | Владелец: Apple runner/QA. Возобновить на совместимом macOS/Xcode host с iOS 18.2 simulator/device; сохранить test reports, фактические scheme/toolchain и launch assertion. |
-| Desktop tests/runtime | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; Windows 11 x64/JDK 21.0.10 | Task graph обнаружен; тесты и окно приложения фактически не запускались. **UNRUN**. Нужны тестовые отчёты и launch assertion на Windows 11 x64, macOS 14 arm64, Ubuntu 24.04 x64. | Владелец: Desktop runner/QA. Возобновить на каждом требуемом host; фиксировать ОС/архитектуру, locale, controlled state, SHA и результат. |
+| Desktop tests/runtime | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; Windows 11 x64/JDK 21.0.10 | Task graph обнаружен; тесты и окно приложения фактически не запускались. **UNRUN**. Нужны тестовые отчёты и launch assertion на Windows 11 x64, macOS 14 arm64, Ubuntu 24.04 x64. | Владелец: Desktop runner/QA. Возобновить на каждом требуемом host; использовать и записать locale `ru-RU`, deterministic fixture/state, ОС/архитектуру и результат. |
 | Web build/test/runtime | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; browser runner не предоставлен | `wasmJs` target/tasks отсутствуют; runtime не запускался. **BLOCKED**. | Владелец: Web/build owner. Возобновить после отдельно утверждённой настройки target/tooling и browser runner; проверить реальный app surface и отсутствие startup/Wasm-load failure в Chrome 130+, Firefox 130+, Safari 18.2+. |
 | Roborazzi golden для UI | Baseline `80bda089fea9724af0af3df3ac4e0dde665d43c5`; golden tooling/commands отсутствуют | Golden command недоступна; в MEE6-3 UI не менялся, поэтому применимость для этой задачи **N/A по scope**. Это не отменяет gate для будущих UI изменений. | Владелец: UI/build owner. Для будущего UI diff возобновить после настройки и отдельно согласованного гейта; не подменять golden отсутствием проверки. |
 
@@ -103,9 +103,10 @@ browser automation и Desktop app launch не подтверждено. Пере
 подключения отсутствующего target и runner. Ни один launch smoke не доказывает
 backend/feature parity.
 
-Для каждого наблюдения записывать полный source SHA, команду/сценарий, source
-sets/consumers, OS/архитектуру и версии tool/runtime, assertion, exit/result
-и ссылку на доказательство. Использовать контролируемые fixtures/state,
-записывать locale, ждать ожидаемое состояние ограниченное время и сохранять
-sanitized диагностику/screenshots. Не включать реальные credentials или
-персональные данные.
+Для каждого наблюдения использовать фиксированную test locale `ru-RU` и
+контролируемый детерминированный fixture/state. Записывать полный source SHA,
+команду/сценарий, source sets/consumers, locale, fixture ID/version или reset
+procedure, device/OS/архитектуру, network state, версии tool/runtime,
+assertion, exit/result и ссылку на доказательство. Ждать ожидаемое состояние
+ограниченное время и сохранять sanitized диагностику/screenshots. Не включать
+реальные credentials или персональные данные.
