@@ -1,42 +1,60 @@
-# Android smoke — MeetingsMP (event aggregator, KMP + web target)
+# Android smoke — MeetingsMP
 
-Device-conditional smoke the `ci-cd` agent runs **after** a green objective gate
-(detekt + tests + assembleDebug), via the `mobile` MCP server (MOBILE_PROFILE=android).
+Этот сценарий — launch-only baseline для Android. Матрица применимости,
+поддерживаемые версии и общие правила фиксации результата описаны в
+[матрице платформ](../platform-verification-matrix.md).
 
 - **Package:** `dev.whysoezzy.meetings`
 - **Debug APK:** `meetings-android/build/outputs/apk/debug/meetings-android-debug.apk`
-- **Device policy:** device/emulator present → SM-0 blocking; none → `smoke: SKIPPED (no device)`, not a fail.
+- **Runner:** для применимого product smoke нужен Android device/emulator. Если
+  runner отсутствует, обязательная проверка имеет статус **BLOCKED**.
+- **Документационные изменения:** product smoke имеет статус **N/A** с причиной
+  «изменены только документы»; это не подтверждает работоспособность приложения.
 
-> **State (current):** the UI migration to the aggregator screens landed incorrectly — screen
-> content is not yet trustworthy. So the gate smoke is **launch-only**: it does NOT assert on any
-> screen text. It verifies the app installs and starts without crashing. Screen-level assertions
-> are deferred to the SA-* target suite below, filled in once the migration is correct.
+> **Scope:** smoke остаётся только проверкой установки и запуска и не утверждает,
+> что продуктовые экраны или функции работают. Экранные assertions в SA-* ниже
+> неактивны и не являются частью этого baseline.
 
 ---
 
-## Gate smoke (blocking when a device is present)
+## Launch smoke (обязателен для применимых Android-изменений)
 
-### SM-0 — App installs and launches without crashing  (text-agnostic)
+### SM-0 — приложение устанавливается и запускается без аварии
 1. `install_app` → the debug APK path above
 2. `launch_app dev.whysoezzy.meetings`
-3. `wait` 4000 ms (let the first frame settle)
-4. `get_current_activity` → assert the foreground activity belongs to `dev.whysoezzy.meetings`
-   (the app is in front, i.e. it did not crash out or close)
-5. `get_logs` filtered by `dev.whysoezzy.meetings` → assert **no** `FATAL EXCEPTION` /
-   `AndroidRuntime` crash / ANR in the launch window
-6. `screenshot` → attach to the gate report for manual eyeballing (no assertion)
-- **Pass:** app foregrounded + no fatal log → install/launch path is healthy.
-- **Fail:** activity not foreground OR a FATAL in logs → status FAIL, attach screenshot + logs.
+3. Зафиксировать API устройства, locale, ориентацию и контролируемое состояние
+   приложения/устройства; использовать тестовые данные без реальных credentials
+   и персональных данных.
+4. Ожидать ожидаемую foreground activity опросом состояния с ограничением 30 секунд.
+   Фиксированная пауза не считается проверкой готовности.
+5. `get_current_activity` → подтвердить, что foreground activity принадлежит
+   `dev.whysoezzy.meetings`.
+6. `get_logs` для окна запуска → подтвердить отсутствие `FATAL EXCEPTION`,
+   AndroidRuntime crash и ANR.
+7. Снять screenshot после готовности activity и приложить его вместе с
+   sanitized логами и параметрами среды.
 
-That is the entire blocking smoke while screens are unstable. It deliberately avoids
-`assert_visible` so a broken/renamed screen can't false-fail a PR.
+- **PASS:** activity приложения стала foreground в пределах timeout и в логах
+  запуска нет fatal/ANR.
+- **FAIL:** неверная activity, fatal/ANR либо timeout; приложить диагностические
+  материалы.
+- **BLOCKED:** обязательный device/emulator или необходимый доступный runner
+  отсутствует; указать владельца runner и условие возобновления.
+- **N/A:** только если task scope не затрагивает продукт, например docs-only;
+  указать основание. Не использовать N/A для недоступного runner.
+
+Результат привязывается к полному SHA проверенной ревизии и включает команду/
+сценарий, source sets и consumers, ОС/архитектуру/API, locale, assertion,
+результат и ссылку на доказательства. Запуск приложения не подтверждает
+feature/API parity.
 
 ---
 
-## Target suite (NOT active — fill after the aggregator UI migration is correct)
+## Target suite (неактивен)
 
-When the migration lands, replace SM-0's screenshot step with real assertions on the aggregator
-screens. Expected screens from the product logic (confirm exact strings on the migrated UI):
+SA-* assertions не являются частью launch-only baseline и не должны объявляться
+пройденными без отдельного согласованного изменения и реальных стабильных
+assertions:
 
 ### SA-1 — Event feed renders  (needs backend or cached data)
 - Feed sections: nearest-event banner, «Ближайшие встречи», «Сообщества», «Все встречи».
@@ -55,6 +73,8 @@ screens. Expected screens from the product logic (confirm exact strings on the m
 ---
 
 ## Notes
-- Non-UI tasks (refactor, build, ingestion-contract changes) → mark the PR `smoke: N/A`.
-- Pull-to-refresh, Yandex MapKit, tag/city/date filters are aggregator features — add SA-* blocks
-  for them only after the screens stabilize and you have real, stable element strings.
+- Для затронутых Android product changes отсутствие runner означает **BLOCKED**,
+  не `SKIPPED`; возобновить smoke, когда доступен device/emulator runner.
+- Только документационная задача получает **N/A** для product smoke по scope.
+- Pull-to-refresh, Yandex MapKit, tag/city/date filters не проверяются этим
+  launch-only сценарием.
