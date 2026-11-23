@@ -212,7 +212,7 @@ $1 за 1 000 запросов. Это датированное наблюден
 документированный синтаксис URL и координат, но не фактический запуск
 сформированных MeetingsMP ссылок, выбор обработчика/fallback, отображение
 целевой точки или поддержку всех платформ и версий. Проверка этих сценариев
-остаётся блокером готовности MEE6-39.
+остаётся блокером готовности будущей реализации карты.
 
 - [Yandex Maps для Android](https://yandex.com/dev/yandex-apps-launch-maps/doc/en/concepts/yandexmaps-android-app)
 - [Yandex Maps для iOS](https://yandex.com/dev/yandex-apps-launch-maps/doc/en/concepts/yandexmaps-ios-app)
