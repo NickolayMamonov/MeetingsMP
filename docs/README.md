@@ -2,4 +2,5 @@
 
 - [Технические правила проекта](../AGENTS.md)
 - [Матрица поддержки и проверки платформ](platform-verification-matrix.md)
+- [Воспроизводимый build baseline](build-baseline.md)
 - [Android smoke-сценарии](smoke/android-smoke.md)
